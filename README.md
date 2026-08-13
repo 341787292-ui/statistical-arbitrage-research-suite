@@ -78,7 +78,7 @@ If `OPENAI_API_KEY` is set, the analyzer will try to use the OpenAI API for stru
 After this repository is pushed to GitHub:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/ai-quant-research-agent.git
+git clone https://github.com/341787292-ui/ai-quant-research-agent.git
 cd ai-quant-research-agent
 ```
 
