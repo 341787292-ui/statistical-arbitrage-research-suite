@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+reports/*.md
+reports/*.json
+local_data/
+chroma_db/
+sources/
+AGENTS.md
+.codex/
+.agents/
