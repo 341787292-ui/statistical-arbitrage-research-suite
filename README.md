@@ -2,6 +2,24 @@
 
 An early MVP for an AI-assisted quantitative research workflow focused on statistical arbitrage.
 
+## Paper Reproduction First
+
+The active research track now starts with a faithful reproduction of *Deep
+Learning Statistical Arbitrage* before extending the Agent. The independent,
+paper-aligned implementation and experiment contract live in
+`paper_reproduction/`. The earlier pair-spread Agent remains available as an
+engineering prototype, but its synthetic pair backtest is not presented as a
+reproduction of the paper.
+
+For the active paper track:
+
+```bash
+pip install -r paper_reproduction/requirements.txt
+python paper_reproduction/download_official_data.py
+python -m unittest discover -s paper_reproduction/tests -v
+python paper_reproduction/run_official_table1_ou.py
+```
+
 The first baseline agent converts a paper or note into an auditable research loop:
 
 ```text
@@ -107,6 +125,7 @@ quant_research_agent/
   pipeline.py End-to-end orchestration
 samples/     Local sample documents for tests and demos
 tests/       Smoke tests for the first runnable slice
+paper_reproduction/ Independent paper-first implementation and experiments
 ```
 
 ## Current MVP
@@ -126,4 +145,6 @@ Implemented:
 
 Next:
 
-- Add real market data loading and swap the deterministic sample into the same Quant Engine interface.
+- Complete the 100-epoch rolling neural experiments on a CUDA machine.
+- Rebuild unavailable stock-space residual composition matrices from licensed
+  or equivalent point-in-time raw data.

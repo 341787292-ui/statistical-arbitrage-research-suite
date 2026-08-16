@@ -1,0 +1,48 @@
+{
+  "repository": "gregzanotti/dlsa-public",
+  "repository_commit": "ea8cc2958943eb1fe914aa4fad6998994a678323",
+  "files": [
+    {
+      "role": "fama_french_5_factor_oos_residual_returns",
+      "filename": "DailyFamaFrench_OOSresiduals_5_factors_1998_initialOOSYear_60_rollingWindow_0.01_Cap.npy.gz",
+      "url": "https://raw.githubusercontent.com/gregzanotti/dlsa-public/main/residuals/famafrench/DailyFamaFrench_OOSresiduals_5_factors_1998_initialOOSYear_60_rollingWindow_0.01_Cap.npy.gz",
+      "git_blob_sha": "a25489a7e281a6ef2ad97725274e8abbc38d9991",
+      "sha256": "14a0504c2676c1d34a9fe53cce9e53004f4e212078a54d35e13c8e98ac2e8c93",
+      "size_bytes": 39801299,
+      "published": true
+    },
+    {
+      "role": "pca_5_factor_oos_residual_returns",
+      "filename": "AvPCA_OOSresiduals_5_factors_1998_initialOOSYear_60_rollingWindow_252_covWindow_0.01_Cap.npy.gz",
+      "url": "https://raw.githubusercontent.com/gregzanotti/dlsa-public/main/residuals/pca/AvPCA_OOSresiduals_5_factors_1998_initialOOSYear_60_rollingWindow_252_covWindow_0.01_Cap.npy.gz",
+      "git_blob_sha": "86252df75f8add3fb0f0cdb284ed9b8c3385270e",
+      "sha256": "e285ad9e8ddee2243a5cc11c3626bf91a76bb15f13af49fa5bb8472e1e516f54",
+      "size_bytes": 39772166,
+      "published": true
+    },
+    {
+      "role": "ipca_5_factor_oos_residual_returns",
+      "filename": "IPCA_DailyOOSresiduals_5_factors_420_initialMonths_240_window_12_reestimationFreq_0.01_cap.npy.gz",
+      "url": "https://raw.githubusercontent.com/gregzanotti/dlsa-public/main/residuals/ipca_normalized/IPCA_DailyOOSresiduals_5_factors_420_initialMonths_240_window_12_reestimationFreq_0.01_cap.npy.gz",
+      "git_blob_sha": "81fb96156d7e836a86a0c20ea07d7a9e56b21ebf",
+      "sha256": "e2042bfd257b893f61c0381182b3bf84a7c5bcecc55315d843975f5d65bc616b",
+      "size_bytes": 39806149,
+      "published": true
+    },
+    {
+      "role": "ipca_universe_mask",
+      "filename": "superMask.npy",
+      "url": "https://raw.githubusercontent.com/gregzanotti/dlsa-public/main/residuals/superMask.npy",
+      "git_blob_sha": "8934dead03cfe730d5be50dabbc2fe27aa5c8fe5",
+      "sha256": "6e9c51f508a6f4467d97b33a7464baee717a1de96e1327ca26b43d88e01a5a6e",
+      "size_bytes": 9611,
+      "published": true
+    },
+    {
+      "role": "stock_space_residual_composition_matrices",
+      "published": false,
+      "required_for_exact_stock_space_normalization": true,
+      "applies_to": ["FamaFrench", "PCA", "IPCA"]
+    }
+  ]
+}

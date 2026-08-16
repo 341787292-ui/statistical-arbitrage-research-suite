@@ -2,6 +2,7 @@
 .env.*
 !.env.example
 .venv/
+.venv-paper/
 __pycache__/
 *.pyc
 .pytest_cache/
@@ -9,6 +10,12 @@ __pycache__/
 .ruff_cache/
 reports/*.md
 reports/*.json
+paper_reproduction/output/
+paper_reproduction/data/*.npy
+paper_reproduction/data/*.npy.gz
+paper_reproduction/data/*.npz
+references/papers/*.pdf
+tmp/
 local_data/
 chroma_db/
 sources/
