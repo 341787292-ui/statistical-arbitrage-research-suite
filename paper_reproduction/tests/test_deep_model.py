@@ -65,6 +65,88 @@ class DeepModelSmokeTest(unittest.TestCase):
         self.assertEqual(evaluated.daily_returns.shape, (20,))
         self.assertTrue(np.all(np.isfinite(evaluated.daily_returns)))
 
+    def test_gradient_checkpointing_preserves_training_result(self) -> None:
+        returns = make_factor_market(time_count=75, asset_count=6, factor_count=2, seed=31)
+        plain_model = FeedForwardAllocation(
+            input_size=30,
+            hidden_units=(8, 4),
+            dropout=0.25,
+            seed=31,
+        )
+        plain = fit_training_window_streaming(
+            plain_model,
+            returns,
+            lookback=30,
+            epochs=1,
+            temporal_batch_size=15,
+            model_chunk_size=12,
+            gradient_checkpointing=False,
+            zero_is_missing=False,
+        )
+        checkpointed_model = FeedForwardAllocation(
+            input_size=30,
+            hidden_units=(8, 4),
+            dropout=0.25,
+            seed=31,
+        )
+        checkpointed = fit_training_window_streaming(
+            checkpointed_model,
+            returns,
+            lookback=30,
+            epochs=1,
+            temporal_batch_size=15,
+            model_chunk_size=12,
+            gradient_checkpointing=True,
+            zero_is_missing=False,
+        )
+        np.testing.assert_allclose(
+            plain.daily_returns,
+            checkpointed.daily_returns,
+            rtol=1e-6,
+            atol=1e-8,
+        )
+        np.testing.assert_allclose(plain.losses, checkpointed.losses, rtol=1e-6)
+
+    def test_model_chunk_size_preserves_training_result(self) -> None:
+        returns = make_factor_market(time_count=75, asset_count=6, factor_count=2, seed=37)
+        small_chunk_model = FeedForwardAllocation(
+            input_size=30,
+            hidden_units=(8, 4),
+            dropout=0.0,
+            seed=37,
+        )
+        small_chunk = fit_training_window_streaming(
+            small_chunk_model,
+            returns,
+            lookback=30,
+            epochs=1,
+            temporal_batch_size=15,
+            model_chunk_size=7,
+            zero_is_missing=False,
+        )
+        full_batch_model = FeedForwardAllocation(
+            input_size=30,
+            hidden_units=(8, 4),
+            dropout=0.0,
+            seed=37,
+        )
+        full_batch = fit_training_window_streaming(
+            full_batch_model,
+            returns,
+            lookback=30,
+            epochs=1,
+            temporal_batch_size=15,
+            model_chunk_size=10_000,
+            zero_is_missing=False,
+        )
+        np.testing.assert_allclose(
+            small_chunk.daily_returns,
+            full_batch.daily_returns,
+            rtol=1e-6,
+            atol=1e-8,
+        )
+        np.testing.assert_allclose(small_chunk.losses, full_batch.losses, rtol=1e-6)
+
     def test_model_outputs_one_score_per_residual_window(self) -> None:
         model = CNNTransformerAllocation(dropout=0.0)
         windows = torch.randn(17, 30)

@@ -77,11 +77,41 @@ settings on a CUDA machine:
 
 ```bash
 python paper_reproduction/run_official_neural_full.py --factor-model pca --model cnn --device cuda
-python paper_reproduction/run_official_neural_full.py --factor-model pca --model fourier --device cuda
+python paper_reproduction/run_official_neural_full.py --factor-model pca --model fourier --device cuda --chunk-size 262144
 ```
 
 Omit `--device cuda` to run on CPU. The formal command defaults to 100 epochs
 and all rolling origins and saves both a JSON manifest and daily arrays.
+For Fourier+FFN, `--chunk-size 262144` keeps each observed temporal batch in a
+single model call for the published arrays. The value is recorded in every
+checkpoint because changing chunk boundaries changes dropout RNG ordering.
+
+The complete five-factor Fourier comparison uses the same settings for each
+official residual file:
+
+```bash
+python paper_reproduction/run_official_neural_full.py --factor-model ff --model fourier --chunk-size 262144
+python paper_reproduction/run_official_neural_full.py --factor-model pca --model fourier --chunk-size 262144
+python paper_reproduction/run_official_neural_full.py --factor-model ipca --model fourier --chunk-size 262144
+```
+
+After a formal run completes, audit performance across rolling windows:
+
+```bash
+python paper_reproduction/analyze_official_neural_stability.py \
+  --run-name pca_fourier_e100_seed0_chunk262144
+```
+
+The audit validates that all checkpoints stitch back to the formal result and
+writes per-window metrics, a concise stability summary, and a diagnostic chart
+under `paper_reproduction/output/analysis`.
+
+After completing Fourier+FFN for all three five-factor residual datasets,
+generate the Table I comparison with:
+
+```bash
+python paper_reproduction/compare_official_fourier.py
+```
 
 The default run uses simulated returns whose idiosyncratic price components
 follow mean-reverting processes. This is a plumbing and correctness test, not
@@ -96,3 +126,6 @@ for the paper's stock-space normalization are not included.
 
 See `REPRODUCTION_SPEC.md` for the exact experiment contract, target results,
 and the data needed before a result may be labeled an exact reproduction.
+See `CLOUD_RUN.md` for CUDA, Colab, and second-computer commands.
+See `RESEARCHER_WALKTHROUGH.md` for the order in which to study and run each
+stage yourself.

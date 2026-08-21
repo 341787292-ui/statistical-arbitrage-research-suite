@@ -1,150 +1,122 @@
-# AI Quant Research Agent
+# Statistical Arbitrage Research Suite
 
-An early MVP for an AI-assisted quantitative research workflow focused on statistical arbitrage.
+This repository contains three deliberately separate products built around
+statistical-arbitrage research.
 
-## Paper Reproduction First
+| Product | Purpose | Current status |
+|---|---|---|
+| `paper_reproduction/` | Internship project: reproduce *Deep Learning Statistical Arbitrage* | OU and all three five-factor Fourier+FFN public-data approximations complete |
+| `ashare_stat_arb/` | Applied research: adapt the method to A-share market constraints | Product scaffold and tested T+1 execution baseline complete |
+| `quant_research_agent/` | Research project: build a statistical-arbitrage research Agent | First deterministic Agent MVP retained; development currently paused |
 
-The active research track now starts with a faithful reproduction of *Deep
-Learning Statistical Arbitrage* before extending the Agent. The independent,
-paper-aligned implementation and experiment contract live in
-`paper_reproduction/`. The earlier pair-spread Agent remains available as an
-engineering prototype, but its synthetic pair backtest is not presented as a
-reproduction of the paper.
+The products share research concepts, but they do not share empirical claims.
+The U.S. paper result, A-share adaptation, and Agent evaluation must always be
+reported separately.
 
-For the active paper track:
+## 1. U.S. paper reproduction
+
+`paper_reproduction/` is the frozen reference implementation for the paper.
+It includes:
+
+- no-lookahead rolling residual construction;
+- OU+Threshold, Fourier+FFN, and CNN+Transformer implementations;
+- rolling neural training and resumable checkpoints;
+- official-data stability and Table I comparison tools;
+- tests for signal timing, normalization, training, and audit reconciliation.
+
+The completed public-data runs use the authors' Fama-French, PCA, and IPCA
+five-factor residual arrays. The repository does not contain the licensed raw
+CRSP/Compustat inputs or the unpublished residual composition matrices.
+Results are therefore labeled **residual-space approximations**, not exact
+empirical reproductions.
+
+See:
+
+- `paper_reproduction/RESULTS.md`
+- `paper_reproduction/STATUS.md`
+- `paper_reproduction/REPRODUCTION_SPEC.md`
+- `paper_reproduction/RESEARCHER_WALKTHROUGH.md`
+
+Run its tests with a Python 3.11 or 3.12 environment:
 
 ```bash
 pip install -r paper_reproduction/requirements.txt
-python paper_reproduction/download_official_data.py
 python -m unittest discover -s paper_reproduction/tests -v
-python paper_reproduction/run_official_table1_ou.py
 ```
 
-The first baseline agent converts a paper or note into an auditable research loop:
+## 2. A-share market adaptation
+
+`ashare_stat_arb/` studies how the paper's residual mean-reversion mechanism
+changes under A-share execution constraints.
+
+The first runnable component supports:
+
+- long-only cash-equity holdings;
+- T+1 sellable inventory;
+- suspension handling;
+- conservative upper-limit buy and lower-limit sell rejection;
+- lot-size constraints;
+- configurable directional trading fees.
+
+Run the baseline demonstration and tests:
+
+```bash
+python -m ashare_stat_arb.run_execution_demo
+python -m unittest discover -s ashare_stat_arb/tests -v
+```
+
+See `ashare_stat_arb/RESEARCH_SPEC.md` for the point-in-time data contract and
+the separation between theoretical long-short and executable A-share tracks.
+
+## 3. Quant research Agent
+
+`quant_research_agent/` is an early research-engineering prototype. It turns a
+paper or note into an auditable workflow:
 
 ```text
 Paper / note
-  -> text chunks
-  -> lightweight retrieval
-  -> structured paper analysis
-  -> baseline reproduction plan
-  -> baseline backtest
-  -> hypothesis generation
-  -> cost and period validation
+  -> retrieval and structured paper analysis
+  -> baseline experiment plan
+  -> deterministic quant tools
+  -> hypothesis generation and validation
   -> reflected research report
 ```
 
-## Quick Start
+The Agent's synthetic pair-spread backtest is an engineering baseline, not a
+reproduction of the paper.
 
-Use Python 3.11 or newer. Create an isolated environment before installing dependencies.
-
-### Windows PowerShell
-
-```powershell
-py -3.11 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-python main.py --paper samples\stat_arb_note.txt --no-llm --run-agent
-```
-
-### macOS or Linux
+Run it locally:
 
 ```bash
-python3.11 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
 pip install -r requirements.txt
 python main.py --paper samples/stat_arb_note.txt --no-llm --run-agent
+python -m unittest discover -s tests -v
 ```
 
-The generated report and JSON result are written under `reports/`.
+An optional OpenAI-backed extraction path is available through `.env`; API
+keys must never be committed.
 
-### Optional LLM extraction
+## Repository data policy
 
-Copy `.env.example` to `.env`, set `OPENAI_API_KEY`, then export the variables in your shell or IDE. Never commit `.env`.
+The repository contains source code, tests, research specifications, and
+human-readable result summaries. It intentionally excludes:
+
+- API keys and `.env` files;
+- licensed or large market datasets;
+- author residual arrays and paper PDFs;
+- generated checkpoints, figures, and reports;
+- local virtual environments and IDE preferences.
+
+Download scripts and manifests are retained so allowed public inputs can be
+recreated locally.
+
+## Clone
 
 ```bash
-python main.py --paper samples/stat_arb_note.txt
+git clone https://github.com/341787292-ui/statistical-arbitrage-research-suite.git
+cd statistical-arbitrage-research-suite
 ```
 
-The output report is written to `reports/paper_research_spec.md`.
-
-To include the deterministic local statistical arbitrage baseline:
-
-```bash
-python main.py --paper samples/stat_arb_note.txt --no-llm --run-quant
-```
-
-To run the complete baseline Agent, including automatic validation and reflection:
-
-```bash
-python main.py --paper samples/stat_arb_note.txt --no-llm --run-agent
-```
-
-To analyze a PDF, install the optional PDF dependency and pass the file path:
-
-```bash
-pip install -r requirements.txt
-python main.py --paper "knowledge/papers/Deep Learning Statistical Arbitrage.pdf"
-```
-
-If `OPENAI_API_KEY` is set, the analyzer will try to use the OpenAI API for structured extraction. Without an API key, it falls back to deterministic rule-based extraction so the pipeline remains runnable locally.
-
-## Use On Another Computer
-
-After this repository is pushed to GitHub:
-
-```bash
-git clone https://github.com/341787292-ui/ai-quant-research-agent.git
-cd ai-quant-research-agent
-```
-
-Then follow the Windows, macOS, or Linux setup above. Paper PDFs and generated reports are local research materials and are intentionally not committed by default.
-
-## Docker
-
-The baseline Agent can also run in a reproducible container:
-
-```bash
-docker build -t ai-quant-research-agent .
-docker run --rm -v "${PWD}/reports:/app/reports" ai-quant-research-agent
-```
-
-On Windows PowerShell, replace `${PWD}` with `${PWD}.Path` if your Docker setup requires an absolute path.
-
-GitHub stores and distributes the code; it does not keep this CLI running as a cloud service. A browser-accessible cloud version will require an API/UI layer and a deployment target in the next phase.
-
-## Project Shape
-
-```text
-quant_research_agent/
-  agent/      Paper analysis, planning, and report generation
-  rag/        Document loading, chunking, and retrieval
-  llm.py      Optional OpenAI client wrapper
-  pipeline.py End-to-end orchestration
-samples/     Local sample documents for tests and demos
-tests/       Smoke tests for the first runnable slice
-paper_reproduction/ Independent paper-first implementation and experiments
-```
-
-## Current MVP
-
-Implemented:
-
-- Load `.txt`, `.md`, and `.pdf` documents.
-- Split text into overlapping chunks.
-- Retrieve relevant chunks for research concepts.
-- Extract a structured paper research specification.
-- Generate a baseline statistical arbitrage reproduction plan.
-- Run a deterministic pair-spread statistical arbitrage baseline without external data.
-- Choose and execute transaction-cost and period-stability validation tools.
-- Update the initial hypothesis after observing validation evidence.
-- Record an auditable Agent execution trace.
-- Write a markdown report.
-
-Next:
-
-- Complete the 100-epoch rolling neural experiments on a CUDA machine.
-- Rebuild unavailable stock-space residual composition matrices from licensed
-  or equivalent point-in-time raw data.
+The Docker configuration at the repository root runs the Agent MVP. The paper
+and A-share products are currently research workflows rather than hosted web
+services.

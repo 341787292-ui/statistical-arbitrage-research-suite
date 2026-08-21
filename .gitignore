@@ -22,4 +22,8 @@ sources/
 AGENTS.md
 .codex/
 .agents/
+.vscode/
 .gh-auth-*.txt
+ashare_stat_arb/data/*
+!ashare_stat_arb/data/README.md
+ashare_stat_arb/output/

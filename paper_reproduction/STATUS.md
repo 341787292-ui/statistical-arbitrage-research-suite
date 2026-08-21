@@ -9,6 +9,11 @@
 - Sharpe-objective training and 1,000/125-style rolling OOS driver.
 - Stock-space mapping and L1 normalization when composition matrices exist.
 - Low-memory execution for the authors' full residual arrays.
+- Complete Fama-French-5, PCA-5, and IPCA-5 Fourier+FFN public-data runs: 100
+  epochs, 31 rolling origins, and 3,781 out-of-sample days per factor model.
+- Reproducible rolling-window stability audit with checkpoint reconciliation.
+- Unified five-factor Fourier comparison against the corresponding Table I
+  targets.
 
 ## Current empirical level
 
@@ -21,7 +26,9 @@ original stock weights before normalization.
 
 ## Remaining work
 
-1. Run all 100 epochs and rolling origins for Fourier+FFN and CNN+Transformer.
+1. Run all 100 epochs and rolling origins for CNN+Transformer. The complete
+   five-factor Fourier+FFN public-data comparison is finished; the CNN model
+   now requires a practical CUDA execution environment.
 2. Rebuild composition matrices from licensed or equivalent point-in-time raw
    data before labeling any result an exact empirical reproduction.
 3. Reproduce the remaining factor-count rows of Table I.

@@ -292,6 +292,7 @@ def fit_training_window_streaming(
     learning_rate: float = 0.001,
     temporal_batch_size: int = 125,
     model_chunk_size: int = 4096,
+    gradient_checkpointing: bool = False,
     feature_type: str = "cumsum",
     transaction_cost: float = 0.0,
     short_holding_cost: float = 0.0,
@@ -340,7 +341,7 @@ def fit_training_window_streaming(
                 model,
                 features,
                 model_chunk_size,
-                use_checkpoint=True,
+                use_checkpoint=gradient_checkpointing,
             )
             scores = torch.zeros(valid.shape, dtype=torch.float32, device=device)
             scores = scores.masked_scatter(valid, active_scores)
@@ -458,6 +459,7 @@ def rolling_train_test_streaming(
     retrain_frequency: int = 125,
     temporal_batch_size: int = 125,
     model_chunk_size: int = 4096,
+    gradient_checkpointing: bool = False,
     epochs: int = 100,
     learning_rate: float = 0.001,
     feature_type: str = "cumsum",
@@ -509,6 +511,7 @@ def rolling_train_test_streaming(
             learning_rate=learning_rate,
             temporal_batch_size=temporal_batch_size,
             model_chunk_size=model_chunk_size,
+            gradient_checkpointing=gradient_checkpointing,
             feature_type=feature_type,
             transaction_cost=transaction_cost,
             short_holding_cost=short_holding_cost,

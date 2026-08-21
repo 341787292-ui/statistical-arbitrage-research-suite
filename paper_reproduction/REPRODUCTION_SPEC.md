@@ -80,6 +80,11 @@ contains compressed residual-return arrays for Fama-French, PCA, and IPCA, but
 does not contain the residual composition matrix files referenced by
 `run_train_test.py`. Those matrices are required to map residual allocations to
 stock allocations before L1 normalization and transaction-cost calculations.
+For the observed Fama-French model, the author's unpublished composition array
+maps each residual into a joint underlying space of eligible stocks plus the
+traded factor portfolios. It therefore cannot be reconstructed from residual
+returns alone, and its absence affects both normalization and holdings
+interpretation.
 
 Therefore:
 
@@ -112,4 +117,3 @@ Every reported result must save:
 - whether stock-space residual composition weights were used;
 - gross and net returns, turnover, short proportion, and performance metrics;
 - the exact code commit that produced the output.
-
