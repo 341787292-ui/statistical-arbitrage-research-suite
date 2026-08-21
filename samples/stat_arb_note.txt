@@ -1,0 +1,9 @@
+Deep Learning Statistical Arbitrage studies a research workflow for building statistical arbitrage strategies from equity return data. The key research problem is how to construct arbitrage portfolios, extract trading signals from residual time series, and translate those signals into portfolio allocations.
+
+The paper's conceptual structure separates the problem into portfolio generation, signal extraction, and trading policy. In a simplified reproducible baseline, a researcher can select related assets, estimate a hedge ratio, construct a residual spread, and generate a mean reversion signal from the spread z-score.
+
+The full deep learning version can replace the simple mean reversion signal with a model such as a CNN or Transformer that learns local reversal patterns and longer time dependencies from cumulative residuals. This module should be added only after the baseline statistical arbitrage engine runs end to end.
+
+Data requirements include daily stock prices or returns, a reproducible stock universe, and enough history to estimate relationships and test out-of-sample performance. If proprietary CRSP or Compustat data is unavailable, public equity prices can support an approximate baseline but not an exact reproduction.
+
+Evaluation should include annual return, Sharpe ratio, maximum drawdown, turnover, and transaction cost sensitivity. A strategy should not be judged only by positive backtest return; the analysis should consider robustness, regime behavior, and whether the signal survives realistic costs.
