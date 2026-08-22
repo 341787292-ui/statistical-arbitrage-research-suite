@@ -3,6 +3,7 @@
 !.env.example
 .venv/
 .venv-paper/
+.venv-ashare/
 __pycache__/
 *.pyc
 .pytest_cache/

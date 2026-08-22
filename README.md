@@ -6,7 +6,7 @@ statistical-arbitrage research.
 | Product | Purpose | Current status |
 |---|---|---|
 | `paper_reproduction/` | Internship project: reproduce *Deep Learning Statistical Arbitrage* | OU and all three five-factor Fourier+FFN public-data approximations complete |
-| `ashare_stat_arb/` | Applied research: adapt the method to A-share market constraints | Product scaffold and tested T+1 execution baseline complete |
+| `ashare_stat_arb/` | Applied research: adapt the method to A-share market constraints | Synthetic PCA-OU long-only baseline and JQData pipeline complete; real-data run awaits local credentials |
 | `quant_research_agent/` | Research project: build a statistical-arbitrage research Agent | First deterministic Agent MVP retained; development currently paused |
 
 The products share research concepts, but they do not share empirical claims.
@@ -49,7 +49,7 @@ python -m unittest discover -s paper_reproduction/tests -v
 `ashare_stat_arb/` studies how the paper's residual mean-reversion mechanism
 changes under A-share execution constraints.
 
-The first runnable component supports:
+The current runnable product supports:
 
 - long-only cash-equity holdings;
 - T+1 sellable inventory;
@@ -57,13 +57,23 @@ The first runnable component supports:
 - conservative upper-limit buy and lower-limit sell rejection;
 - lot-size constraints;
 - configurable directional trading fees.
+- monthly point-in-time CSI 500 membership and weights;
+- monthly no-lookahead PCA residual estimation and daily OU signals;
+- CVXPY long-only benchmark-relative optimization;
+- separate adjusted signal prices and raw next-open execution prices.
 
 Run the baseline demonstration and tests:
 
 ```bash
 python -m ashare_stat_arb.run_execution_demo
+python -m ashare_stat_arb.run_baseline_demo
 python -m unittest discover -s ashare_stat_arb/tests -v
 ```
+
+The checked synthetic baseline validates the engineering path only. A real
+empirical result requires local JQData credentials and is run with
+`ashare_stat_arb.download_jqdata` followed by
+`ashare_stat_arb.run_empirical_baseline`.
 
 See `ashare_stat_arb/RESEARCH_SPEC.md` for the point-in-time data contract and
 the separation between theoretical long-short and executable A-share tracks.

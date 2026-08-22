@@ -1,5 +1,6 @@
 """A-share adaptation of the statistical-arbitrage research pipeline."""
 
+from ashare_stat_arb.config import AshareResearchConfig, DEFAULT_CONFIG
 from ashare_stat_arb.execution import (
     ExecutionRecord,
     ExecutionReport,
@@ -11,6 +12,8 @@ from ashare_stat_arb.execution import (
 )
 
 __all__ = [
+    "AshareResearchConfig",
+    "DEFAULT_CONFIG",
     "ExecutionRecord",
     "ExecutionReport",
     "FeeSchedule",

@@ -7,9 +7,10 @@ reproduction baseline.
 
 ## Research question
 
-How much of residual mean reversion remains after replacing the paper's
-frictionless long-short assumptions with A-share data, T+1 inventory,
-board-specific price limits, suspensions, fees, and restricted shorting?
+Can the paper's residual signal add net excess return to a cash-executable
+CSI 500 index-enhancement portfolio after point-in-time membership, T+1,
+price limits, suspensions, liquidity, costs, and benchmark-relative risk are
+modeled?
 
 ## Two experiment tracks
 
@@ -23,7 +24,13 @@ not evidence that the strategy can be traded in the cash equity market.
 
 ## Current runnable baseline
 
-The first component is a stock-level execution engine that supports:
+The product now contains two connected baselines:
+
+1. a stock-level execution engine; and
+2. a no-lookahead PCA residual -> OU signal -> long-only CSI 500 index-
+   enhancement research pipeline.
+
+The execution engine supports:
 
 - nonnegative cash-equity holdings;
 - T+1 sellable inventory;
@@ -33,16 +40,45 @@ The first component is a stock-level execution engine that supports:
 - board-specific lot-size inputs;
 - configurable commission, stamp duty, and transfer fees.
 
-Run the demonstration:
+The research pipeline uses monthly point-in-time constituent/weight snapshots,
+separate post-adjusted signal prices and raw execution prices, monthly PCA
+refits, daily OU updates, CVXPY benchmark-relative portfolio optimization, and
+effective-dated A-share costs. `config.py` freezes the accepted periods,
+risk constraints, and admission gates.
+
+Run the synthetic engineering demonstration:
 
 ```bash
+python -m ashare_stat_arb.run_baseline_demo
 python -m ashare_stat_arb.run_execution_demo
 ```
+
+The synthetic result only proves that the pipeline and constraints execute. It
+is explicitly not an investment-performance result.
 
 Run the tests:
 
 ```bash
 python -m unittest discover -s ashare_stat_arb/tests -v
+```
+
+Install the A-share research dependencies in a separate Python 3.12
+environment:
+
+```bash
+pip install -r ashare_stat_arb/requirements.txt
+```
+
+JQData credentials are read from local `JQDATA_USERNAME` and
+`JQDATA_PASSWORD` environment variables. They and all downloaded market data
+remain outside Git.
+
+Once those two environment variables are present, build the licensed local
+panel and run the empirical baseline:
+
+```bash
+python -m ashare_stat_arb.download_jqdata
+python -m ashare_stat_arb.run_empirical_baseline
 ```
 
 Fee rates and market rules are experiment inputs rather than permanent code

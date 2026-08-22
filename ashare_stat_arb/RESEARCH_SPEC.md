@@ -1,96 +1,154 @@
-# A-Share Adaptation Contract
+# A-Share CSI 500 Research Contract
 
 ## Product boundary
 
-This is an A-share methodology adaptation, not an extension of the reported
-U.S. empirical results. The original public-data outputs remain under
-`paper_reproduction` and must not be overwritten.
+This product adapts the methodology in *Deep Learning Statistical Arbitrage*
+to a cash-executable CSI 500 index-enhancement workflow. It does not overwrite
+or extend the empirical claims under `paper_reproduction/`.
 
-## Phase 1 universe
+Two outputs are always reported separately:
 
-- Shanghai and Shenzhen main-board A shares only.
-- Exclude historical risk-warning and delisting-period observations.
-- Require at least 120 trading days since listing.
-- Form the universe monthly using only prior-month information.
-- Start with 500 to 800 liquid stocks selected by prior-month free-float
-  market capitalization and trading activity.
-- Retain delisted securities in historical samples to avoid survivorship bias.
+1. a theoretical long-short track tests whether the paper's residual mechanism
+   exists in A-share returns;
+2. an executable long-only track converts the signal into CSI 500 benchmark
+   weights plus an alpha tilt under A-share constraints.
 
-ChiNext and STAR Market stocks are deferred until board-specific rule history
-is available and tested.
+The research target is net excess return and information ratio at an auditable
+risk level. A high standalone Sharpe is not an admission criterion by itself.
 
-## Required point-in-time fields
+## Point-in-time universe and periods
 
-| Field group | Minimum fields |
+- Benchmark and universe: historical point-in-time constituents of CSI 500
+  (`000905.XSHG`).
+- Raw data: 2010-01-01 through 2025-12-31.
+- Warmup and initial training: 2010-2014.
+- Development: 2015-2019.
+- Validation: 2020-2022.
+- Sealed holdout: 2023-2025. It must not be inspected during tuning.
+- The stock universe is formed monthly using membership known on the prior
+  trading day.
+- A newly admitted constituent receives zero alpha until it has at least 252
+  valid trailing observations.
+- Historical departures and delisted securities remain in the research panel;
+  a departed constituent is liquidated on the next tradable day.
+
+## Point-in-time data contract
+
+The primary source is JQData. Every run records the SDK version, query period,
+field list, local file checksums, and account entitlement. Raw licensed data is
+never committed to GitHub.
+
+| Field group | Required fields |
 |---|---|
-| Identity | date, symbol, exchange, board |
-| Prices | unadjusted open/high/low/close, prior close, adjustment factor |
-| Liquidity | volume, amount, free-float market capitalization |
-| Lifecycle | listing date, delisting date, listed trading days |
-| Trading status | suspended, risk warning, upper limit, lower limit |
-| Benchmarks | broad-market index return, optional index-futures return |
+| Calendar | complete Shanghai/Shenzhen trading calendar |
+| Identity | date, symbol, exchange, board, listing and delisting dates |
+| Signal prices | post-adjusted close or an audited equivalent |
+| Execution prices | unadjusted open, close, prior close, high/low limits |
+| Liquidity | volume, amount, 20-day ADV, free-float market capitalization |
+| Status | suspension, ST/risk warning, limit state |
+| Universe | point-in-time CSI 500 membership and benchmark weight |
+| Risk | industry and CNE6 style exposure when licensed, otherwise declared proxies |
 
-Adjusted returns are used for signal and residual estimation. Unadjusted
-prices and limit prices are retained for execution tests.
+Signal estimation uses adjusted returns. Execution tests use unadjusted prices.
+Suspended observations are marked to the prior close for valuation but remain
+untradeable. A non-suspension missing observation is a data-quality error.
 
-## Signal timing
+An eligible stock needs at least 95% non-suspended observations in the trailing
+252 sessions and at least 55 valid observations in a 60-day loading window.
+Missingness and winsorization rates are audited; the paper-aligned A1 track does
+not winsorize returns by default.
 
-1. Information through trading day `t` close forms the signal.
-2. Orders execute no earlier than trading day `t+1` open or a declared VWAP.
-3. Shares bought on `t+1` are not sellable until the next session.
-4. Failed orders remain unfilled unless an experiment explicitly enables
-   carryover.
+## Signal research
 
-## Factor and signal baseline
+Phase 1 evaluates only rolling PCA residuals. Factor counts are
+`K = {0, 1, 3, 5, 8, 10, 15}` and `K=5` is the baseline.
 
-- First factor model: rolling PCA with five components.
 - Covariance window: prior 252 trading days.
-- Loading window: prior 60 trading days where applicable.
-- Signal lookback: prior 30 trading days of cumulative residual returns.
-- First signal model: OU+Threshold for interpretable validation.
-- Second signal model: Fourier+FFN after the execution baseline passes.
+- Loading window: prior 60 valid trading days.
+- Residual signal window: prior 30 trading days.
+- Model order: OU+Threshold, Fourier+FFN, then CNN+Transformer.
+- Every signal and composition uses only information available by the decision
+  close. Orders execute no earlier than the next trading-day open.
+- Residual composition must be retained or reproducibly regenerated so alpha
+  can be mapped into stock-space targets.
 
-Every residual must retain its stock-level composition matrix so residual
-allocations can be mapped into executable stock orders.
+The U.S. implementation is reused only through independently implemented
+paper concepts. The authors' source code is a behavioral reference and is not
+a commercial dependency.
 
-## Portfolio tracks
+## Executable portfolio
 
-### Theoretical track
+- Cash equities only, no individual-stock shorting or futures in the first
+  executable version.
+- Target weights equal CSI 500 benchmark weights plus an alpha tilt.
+- Stock exposure remains between 98% and 100%; central target is 99%.
+- Single-stock weight is at most 1.5%.
+- Industry deviation from the benchmark is at most 3 percentage points.
+- Standardized style deviation is at most 0.5 per controlled style.
+- Central ex-ante tracking-error target is 8%, with 6% and 10% sensitivities.
+- Daily two-way turnover target is 15% and hard cap is 20%; 10%, 15%, and 20%
+  are reported as separate scenarios.
+- Position optimization maximizes expected alpha less risk, turnover, and cost
+  penalties. CVXPY is the approved optimization dependency.
 
-- L1-normalized long-short stock weights.
-- Used only to compare the A-share residual mechanism with the paper.
-- Clearly labeled non-executable unless short availability is modeled.
-
-### Executable track
-
-- Nonnegative cash-equity positions.
-- Initial version converts positive residual scores into long-only targets.
-- A later version may add a declared CSI index-futures hedge.
-- Position sizing must respect cash, lot size, and failed executions.
+The public multifactor benchmark is built only after the residual signal passes
+its first admission gate. It includes value, quality, 12-1 momentum, five-day
+reversal, 60-day low volatility, liquidity, and size-as-risk controls.
 
 ## Execution rules
 
-- T+1 sellable inventory is mandatory.
-- Suspended stocks cannot trade.
-- Daily-data baseline rejects buys at the upper limit and sells at the lower
-  limit; a later intraday-data version may model queue-dependent fills.
-- Fee rates are supplied by an effective-dated configuration.
-- Board-specific price limits and lot sizes are supplied by a versioned rule
-  table, never inferred from one permanent constant.
+1. Information through day `t` close produces the decision.
+2. Orders execute at day `t+1` open plus the declared slippage model.
+3. Shares purchased on `t+1` are not sellable until the following session.
+4. Suspended stocks cannot trade.
+5. Buys at the upper limit and sells at the lower limit are rejected in the
+   daily-data baseline.
+6. Orders respect board lot sizes and available cash.
+7. Participation is capped at 5% of trailing 20-day ADV, with 1%, 3%, and 5%
+   sensitivities and partial fills.
+8. Failed orders expire; the next trading day recomputes targets from current
+   holdings instead of carrying stale orders.
+9. ST and delisting-period stocks cannot receive new positions.
 
-## Phase 1 evaluation
+Price-cage and queue models are deferred until minute or order-book data are
+available.
 
-- Gross and net annualized mean, volatility, and Sharpe.
-- Maximum drawdown and turnover.
-- Unfilled order rate by reason.
-- T+1 blocked-sell rate.
-- Upper-limit blocked-buy and lower-limit blocked-sell rates.
-- Difference between theoretical and executable returns.
-- Early/late and market-regime stability.
+## Effective-dated costs
+
+- Commission: 2.5 basis points each side, configurable, with no retail minimum.
+- Stamp duty: 10 basis points on sells before 2023-08-28 and 5 basis points
+  from 2023-08-28 onward.
+- Transfer fee: effective-dated and applied on both sides without double
+  counting exchange fees.
+- Slippage: 10 basis points baseline with 5, 10, and 20 basis-point scenarios.
+
+Every run stores the effective-dated cost table in its manifest.
+
+## Admission gates
+
+Signal-level admission requires:
+
+- out-of-sample mean RankIC at least 0.015;
+- annualized ICIR at least 0.50;
+- stable efficacy at one horizon between 5 and 20 trading days;
+- monotonic grouped returns;
+- positive evidence in at least two of three subperiods;
+- results not concentrated in a small number of names or dates.
+
+Integrated portfolio admission requires:
+
+- net information ratio at least 1.00 and uplift over the public multifactor
+  baseline of at least 0.15;
+- IR 1.50 is strong and 2.00 is a stretch target;
+- IR at or above 3.00 triggers a leakage, leverage, and valuation audit rather
+  than automatic acceptance;
+- active maximum drawdown at most 12%;
+- costs consume no more than 50% of gross alpha;
+- positive rolling 12-month excess return in at least 60% of windows.
 
 ## Reproducibility labels
 
-- `a-share-method-test`: theoretical long-short result before execution rules.
-- `a-share-executable-approximation`: daily-data constrained result.
-- `a-share-execution-study`: result using audited rule history and sufficiently
-  detailed execution data.
+- `a-share-method-test`: theoretical long-short mechanism test.
+- `a-share-executable-approximation`: daily-data constrained long-only result.
+- `a-share-execution-study`: audited point-in-time data and rule history.
+- `sealed-holdout-result`: one-time 2023-2025 result after design freeze.

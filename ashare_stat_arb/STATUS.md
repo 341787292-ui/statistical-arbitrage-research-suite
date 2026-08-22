@@ -11,11 +11,31 @@
 - Long-only target enforcement, lot rounding, and directional fees
   implemented.
 - Unit tests cover the initial execution rules.
+- CSI 500 research periods, risk limits, costs, and admission gates are frozen
+  in code and documentation.
+- A standard daily panel, deterministic fingerprint, and data-audit schema are
+  implemented.
+- An injectable JQData SDK wrapper is implemented without storing credentials.
+- Monthly point-in-time constituent and benchmark-weight panel construction is
+  implemented and tested with an injectable provider.
+- A memory-bounded monthly PCA residual and daily OU stock-alpha pipeline is
+  implemented without future-data access.
+- A CVXPY long-only index-enhancement optimizer enforces exposure, stock cap,
+  turnover, and tracking-error limits.
+- The synthetic end-to-end baseline runs successfully; its output is labeled
+  as an engineering result rather than investment evidence.
+
+## Deterministic engineering run
+
+The current synthetic fixture completes eight monthly PCA refits and produces
+finite long-only, after-cost returns with all optimizer and execution tests
+passing. Its headline IR is intentionally excluded from research conclusions:
+the fixture contains a generated mean-reverting process and is not market data.
 
 ## Next milestone
 
-Connect one point-in-time A-share daily dataset and produce an audited panel
-for the Phase 1 main-board universe.
+Connect the licensed JQData account, build the historical point-in-time CSI 500
+panel, and run the first real-data PCA-OU long-only baseline.
 
 The first data audit must report:
 
@@ -27,9 +47,8 @@ The first data audit must report:
 6. upper/lower-limit flag coverage;
 7. daily and monthly active-universe sizes.
 
-## Blocked by data choice
+## External input required
 
-No empirical A-share return result should be generated until the source and
-license of the point-in-time data are recorded. A close-price-only API is not
-enough for the executable track because it cannot reliably reconstruct
-historical eligibility and failed executions.
+No empirical A-share return result is reported until local JQData credentials
+and entitlements are available. Synthetic fixtures may exercise the pipeline,
+but they are engineering tests rather than investment results.
