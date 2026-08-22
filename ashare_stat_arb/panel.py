@@ -71,12 +71,44 @@ class DailyPanel:
         returns[1:][valid] = current[valid] / previous[valid] - 1.0
         return returns
 
+    def adjusted_open_prices(self) -> np.ndarray:
+        """Apply the close-price adjustment factor to raw opening prices."""
+
+        values = np.full(self.shape, np.nan, dtype=np.float64)
+        valid = (
+            np.isfinite(self.open_price)
+            & np.isfinite(self.close_price)
+            & np.isfinite(self.adjusted_close)
+            & (self.close_price > 0)
+        )
+        values[valid] = (
+            self.open_price[valid]
+            * self.adjusted_close[valid]
+            / self.close_price[valid]
+        )
+        return values
+
+    def open_to_open_returns(self) -> np.ndarray:
+        """Return total returns from each open to the following trading-day open."""
+
+        adjusted_open = self.adjusted_open_prices()
+        returns = np.full(self.shape, np.nan, dtype=np.float64)
+        valid = (
+            np.isfinite(adjusted_open[:-1])
+            & np.isfinite(adjusted_open[1:])
+            & (adjusted_open[:-1] > 0)
+        )
+        returns[:-1][valid] = (
+            adjusted_open[1:][valid] / adjusted_open[:-1][valid] - 1.0
+        )
+        return returns
+
     def next_open_returns(self) -> np.ndarray:
         """Return close-to-next-open returns aligned to the decision date."""
 
         returns = np.full(self.shape, np.nan, dtype=np.float64)
-        current_close = self.close_price[:-1]
-        next_open = self.open_price[1:]
+        current_close = self.adjusted_close[:-1]
+        next_open = self.adjusted_open_prices()[1:]
         valid = np.isfinite(current_close) & np.isfinite(next_open) & (current_close > 0)
         returns[:-1][valid] = next_open[valid] / current_close[valid] - 1.0
         return returns

@@ -40,11 +40,11 @@ The execution engine supports:
 - board-specific lot-size inputs;
 - configurable commission, stamp duty, and transfer fees.
 
-The research pipeline uses monthly point-in-time constituent/weight snapshots,
-separate post-adjusted signal prices and raw execution prices, monthly PCA
+The research pipeline uses monthly point-in-time constituent snapshots,
+separate adjusted signal/return prices and raw execution prices, monthly PCA
 refits, daily OU updates, CVXPY benchmark-relative portfolio optimization, and
-effective-dated A-share costs. `config.py` freezes the accepted periods,
-risk constraints, and admission gates.
+effective-dated A-share costs. `config.py` freezes the accepted periods, risk
+constraints, and admission gates.
 
 Run the synthetic engineering demonstration:
 
@@ -69,17 +69,25 @@ environment:
 pip install -r ashare_stat_arb/requirements.txt
 ```
 
-JQData credentials are read from local `JQDATA_USERNAME` and
-`JQDATA_PASSWORD` environment variables. They and all downloaded market data
-remain outside Git.
+The primary feasibility path uses BaoStock's free anonymous API. No account or
+API key is required. All downloaded market data and caches remain outside Git.
 
-Once those two environment variables are present, build the licensed local
-panel and run the empirical baseline:
+Build the bounded, point-in-time real-data pilot and run the empirical
+baseline:
 
 ```bash
-python -m ashare_stat_arb.download_jqdata
-python -m ashare_stat_arb.run_empirical_baseline
+python -m ashare_stat_arb.download_baostock --start 2018-01-01 --end 2022-12-31 --max-symbols 100 --output ashare_stat_arb/data/baostock_csi500_pilot100_2018_2022.npz
+python -m ashare_stat_arb.run_empirical_baseline --panel ashare_stat_arb/data/baostock_csi500_pilot100_2018_2022.npz --output ashare_stat_arb/output/baostock_pilot100_pca_ou.json
 ```
+
+The `--max-symbols` run takes a deterministic subset from each historical
+membership snapshot without using future membership. It uses an equal-weight
+pilot benchmark so the 1.5% stock cap remains feasible. It is an engineering
+and signal-feasibility study, not an exact CSI 500 index reproduction.
+
+The optional JQData adapter remains available for licensed users. A
+product-grade study still needs exact historical benchmark weights and a more
+complete effective-dated market-rule dataset.
 
 Fee rates and market rules are experiment inputs rather than permanent code
 defaults. Every empirical run must record their effective dates.
@@ -103,5 +111,5 @@ The following components must be A-share-specific:
 - T+1 inventory and failed-order carryover;
 - suspensions, price limits, lot sizes, and effective-dated fees.
 
-See `RESEARCH_SPEC.md` for the first empirical contract and `STATUS.md` for the
-current milestone.
+See `RESEARCH_SPEC.md` for the empirical contract, `RESULTS.md` for the first
+free-data result, and `STATUS.md` for the current milestone.

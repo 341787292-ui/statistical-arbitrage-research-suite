@@ -1,4 +1,4 @@
-jqdatasdk>=1.9.8,<2
+baostock>=0.9.3,<1
 pandas>=2.2.2,<3
 pyarrow>=18,<24
 statsmodels>=0.14,<1
