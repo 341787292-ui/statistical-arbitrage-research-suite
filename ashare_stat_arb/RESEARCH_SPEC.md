@@ -34,9 +34,17 @@ risk level. A high standalone Sharpe is not an admission criterion by itself.
 
 ## Point-in-time data contract
 
-The primary source is JQData. Every run records the SDK version, query period,
-field list, local file checksums, and account entitlement. Raw licensed data is
-never committed to GitHub.
+The free feasibility source is BaoStock. Every run records the package version,
+query period, field list, panel fingerprint, constituent-selection rule, and
+weight approximation. Raw downloaded data is never committed to GitHub.
+
+BaoStock supplies historical CSI 500 members, daily OHLCV/amount, trading
+status, ST flags, turnover, and percentage returns. It does not supply official
+historical index weights in this pipeline. Full-universe free runs therefore
+approximate weights from float-market-cap proxies; bounded pilot runs use equal
+weights inside a deterministic point-in-time subset. Exact benchmark-relative
+claims require an audited source of official historical weights. JQData remains
+an optional licensed adapter.
 
 | Field group | Required fields |
 |---|---|
@@ -149,6 +157,8 @@ Integrated portfolio admission requires:
 ## Reproducibility labels
 
 - `a-share-method-test`: theoretical long-short mechanism test.
+- `a-share-free-data-feasibility`: free point-in-time data with declared
+  benchmark-weight and limit-price approximations.
 - `a-share-executable-approximation`: daily-data constrained long-only result.
 - `a-share-execution-study`: audited point-in-time data and rule history.
 - `sealed-holdout-result`: one-time 2023-2025 result after design freeze.

@@ -60,6 +60,33 @@ class DailyPanelTest(unittest.TestCase):
         self.assertAlmostEqual(next_open[1, 1], 0.05)
         self.assertTrue(np.isnan(next_open[-1]).all())
 
+    def test_open_returns_remove_corporate_action_price_jump(self) -> None:
+        panel = build_panel()
+        raw_open = panel.open_price.copy()
+        raw_close = panel.close_price.copy()
+        adjusted_close = panel.adjusted_close.copy()
+        raw_open[2, 0] /= 2.0
+        raw_close[2, 0] /= 2.0
+        adjusted_close[2, 0] = adjusted_close[1, 0]
+        split_panel = DailyPanel(
+            dates=panel.dates,
+            symbols=panel.symbols,
+            adjusted_close=adjusted_close,
+            open_price=raw_open,
+            close_price=raw_close,
+            high_limit=panel.high_limit,
+            low_limit=panel.low_limit,
+            volume=panel.volume,
+            money=panel.money,
+            paused=panel.paused,
+            is_st=panel.is_st,
+            member=panel.member,
+            benchmark_weight=panel.benchmark_weight,
+        )
+        returns = split_panel.open_to_open_returns()
+        expected = panel.open_price[2, 0] / panel.open_price[1, 0] - 1.0
+        self.assertAlmostEqual(returns[1, 0], expected)
+
     def test_audit_is_deterministic_and_checks_weights(self) -> None:
         panel = build_panel()
         first = audit_panel(panel)

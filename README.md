@@ -6,7 +6,7 @@ statistical-arbitrage research.
 | Product | Purpose | Current status |
 |---|---|---|
 | `paper_reproduction/` | Internship project: reproduce *Deep Learning Statistical Arbitrage* | OU and all three five-factor Fourier+FFN public-data approximations complete |
-| `ashare_stat_arb/` | Applied research: adapt the method to A-share market constraints | Synthetic PCA-OU long-only baseline and JQData pipeline complete; real-data run awaits local credentials |
+| `ashare_stat_arb/` | Applied research: adapt the method to A-share market constraints | Free BaoStock real-data PCA-OU feasibility baseline complete; full-universe product study remains open |
 | `quant_research_agent/` | Research project: build a statistical-arbitrage research Agent | First deterministic Agent MVP retained; development currently paused |
 
 The products share research concepts, but they do not share empirical claims.
@@ -56,7 +56,7 @@ The current runnable product supports:
 - suspension handling;
 - conservative upper-limit buy and lower-limit sell rejection;
 - lot-size constraints;
-- configurable directional trading fees.
+- configurable directional trading fees;
 - monthly point-in-time CSI 500 membership and weights;
 - monthly no-lookahead PCA residual estimation and daily OU signals;
 - CVXPY long-only benchmark-relative optimization;
@@ -70,10 +70,17 @@ python -m ashare_stat_arb.run_baseline_demo
 python -m unittest discover -s ashare_stat_arb/tests -v
 ```
 
-The checked synthetic baseline validates the engineering path only. A real
-empirical result requires local JQData credentials and is run with
-`ashare_stat_arb.download_jqdata` followed by
-`ashare_stat_arb.run_empirical_baseline`.
+The free-data path uses BaoStock anonymous access for historical CSI 500
+members, daily prices, trading status, and ST flags. It intentionally labels
+benchmark weights and daily limit prices as approximations. Build and run the
+bounded real-data pilot with:
+
+```bash
+python -m ashare_stat_arb.download_baostock --start 2018-01-01 --end 2022-12-31 --max-symbols 100 --output ashare_stat_arb/data/baostock_csi500_pilot100_2018_2022.npz
+python -m ashare_stat_arb.run_empirical_baseline --panel ashare_stat_arb/data/baostock_csi500_pilot100_2018_2022.npz --output ashare_stat_arb/output/baostock_pilot100_pca_ou.json
+```
+
+JQData remains an optional licensed adapter rather than a required dependency.
 
 See `ashare_stat_arb/RESEARCH_SPEC.md` for the point-in-time data contract and
 the separation between theoretical long-short and executable A-share tracks.
@@ -117,8 +124,9 @@ human-readable result summaries. It intentionally excludes:
 - generated checkpoints, figures, and reports;
 - local virtual environments and IDE preferences.
 
-Download scripts and manifests are retained so allowed public inputs can be
-recreated locally.
+Download scripts, commands, and manifest schemas are retained so allowed
+public inputs can be recreated locally. See `ashare_stat_arb/RESULTS.md` for
+the first real-data feasibility result and its limitations.
 
 ## Clone
 

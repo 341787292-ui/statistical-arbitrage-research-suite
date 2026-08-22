@@ -4,7 +4,7 @@ from dataclasses import asdict
 from datetime import timedelta
 import json
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable, Mapping
 
 import numpy as np
 import pandas as pd
@@ -157,7 +157,12 @@ def build_csi500_panel(
     )
 
 
-def save_panel(panel: DailyPanel, destination: str | Path) -> tuple[Path, Path]:
+def save_panel(
+    panel: DailyPanel,
+    destination: str | Path,
+    *,
+    metadata: Mapping[str, Any] | None = None,
+) -> tuple[Path, Path]:
     path = Path(destination)
     if path.suffix.lower() != ".npz":
         path = path.with_suffix(".npz")
@@ -183,6 +188,7 @@ def save_panel(panel: DailyPanel, destination: str | Path) -> tuple[Path, Path]:
         "schema_version": 1,
         "panel_file": path.name,
         "audit": asdict(audit_panel(panel)),
+        "metadata": dict(metadata or {}),
     }
     manifest_path.write_text(
         json.dumps(manifest, ensure_ascii=True, indent=2, sort_keys=True),

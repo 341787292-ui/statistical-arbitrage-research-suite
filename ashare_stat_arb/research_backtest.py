@@ -20,16 +20,27 @@ class LongOnlyBacktestResult:
     two_way_turnover: np.ndarray
     costs: np.ndarray
     annualized_return: float
+    annualized_gross_return: float
+    annualized_benchmark_return: float
     annualized_sharpe: float
     annualized_excess_return: float
+    annualized_gross_excess_return: float
     information_ratio: float
+    gross_information_ratio: float
+    annualized_cost_drag: float
     maximum_active_drawdown: float
 
 
 def _covariance(returns: np.ndarray) -> np.ndarray:
     values = np.asarray(returns, dtype=np.float64)
-    column_means = np.nanmean(values, axis=0)
-    column_means = np.nan_to_num(column_means, nan=0.0)
+    finite = np.isfinite(values)
+    counts = finite.sum(axis=0)
+    column_means = np.divide(
+        np.where(finite, values, 0.0).sum(axis=0),
+        counts,
+        out=np.zeros(values.shape[1], dtype=np.float64),
+        where=counts > 0,
+    )
     filled = np.where(np.isfinite(values), values, column_means[None, :])
     sample = np.cov(filled, rowvar=False, ddof=0)
     if sample.ndim == 0:
@@ -102,15 +113,7 @@ def run_long_only_backtest(
     time_count, asset_count = panel.shape
     first_decision = covariance_window if start is None else max(start, covariance_window)
     adjusted_returns = panel.adjusted_returns()
-    open_returns = np.full(panel.shape, np.nan, dtype=np.float64)
-    valid_open = (
-        np.isfinite(panel.open_price[:-1])
-        & np.isfinite(panel.open_price[1:])
-        & (panel.open_price[:-1] > 0)
-    )
-    open_returns[:-1][valid_open] = (
-        panel.open_price[1:][valid_open] / panel.open_price[:-1][valid_open] - 1.0
-    )
+    open_returns = panel.open_to_open_returns()
 
     target_weights = np.zeros(panel.shape, dtype=np.float64)
     executed_weights = np.zeros(panel.shape, dtype=np.float64)
@@ -224,10 +227,25 @@ def run_long_only_backtest(
         previous = executed * (1.0 + asset_returns) / net_growth
 
     active = strategy_returns - benchmark_returns
+    gross_strategy_returns = strategy_returns + realized_costs
+    gross_active = gross_strategy_returns - benchmark_returns
     finite_strategy = strategy_returns[np.isfinite(strategy_returns)]
+    finite_gross_strategy = gross_strategy_returns[np.isfinite(gross_strategy_returns)]
+    finite_benchmark = benchmark_returns[np.isfinite(benchmark_returns)]
     finite_active = active[np.isfinite(active)]
+    finite_gross_active = gross_active[np.isfinite(gross_active)]
+    finite_costs = realized_costs[np.isfinite(strategy_returns)]
     annualized_return = float(finite_strategy.mean() * 252.0) if finite_strategy.size else 0.0
+    annualized_gross_return = (
+        float(finite_gross_strategy.mean() * 252.0) if finite_gross_strategy.size else 0.0
+    )
+    annualized_benchmark_return = (
+        float(finite_benchmark.mean() * 252.0) if finite_benchmark.size else 0.0
+    )
     annualized_excess = float(finite_active.mean() * 252.0) if finite_active.size else 0.0
+    annualized_gross_excess = (
+        float(finite_gross_active.mean() * 252.0) if finite_gross_active.size else 0.0
+    )
     return LongOnlyBacktestResult(
         strategy_returns=strategy_returns,
         benchmark_returns=benchmark_returns,
@@ -237,8 +255,15 @@ def run_long_only_backtest(
         two_way_turnover=turnover,
         costs=realized_costs,
         annualized_return=annualized_return,
+        annualized_gross_return=annualized_gross_return,
+        annualized_benchmark_return=annualized_benchmark_return,
         annualized_sharpe=_annualized_sharpe(finite_strategy),
         annualized_excess_return=annualized_excess,
+        annualized_gross_excess_return=annualized_gross_excess,
         information_ratio=_annualized_sharpe(finite_active),
+        gross_information_ratio=_annualized_sharpe(finite_gross_active),
+        annualized_cost_drag=(
+            float(finite_costs.mean() * 252.0) if finite_costs.size else 0.0
+        ),
         maximum_active_drawdown=_maximum_drawdown(finite_active),
     )
