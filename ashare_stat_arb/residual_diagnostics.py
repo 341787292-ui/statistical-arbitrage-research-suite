@@ -39,13 +39,33 @@ def ou_residual_positions(
     positions = np.zeros_like(residuals)
     for row in range(lookback - 1, residuals.shape[0] - 1):
         history = residuals[row - lookback + 1 : row + 1]
-        valid = np.all(np.isfinite(history), axis=0)
-        for column in np.flatnonzero(valid):
-            positions[row, column] = ou_threshold_weight(
-                fit_ou(np.cumsum(history[:, column])),
-                entry_threshold=entry_threshold,
-                min_r_squared=min_r_squared,
-            )
+        positions[row] = ou_positions_from_history(
+            history,
+            entry_threshold=entry_threshold,
+            min_r_squared=min_r_squared,
+        )
+    return positions
+
+
+def ou_positions_from_history(
+    residual_history: np.ndarray,
+    *,
+    entry_threshold: float,
+    min_r_squared: float,
+) -> np.ndarray:
+    """Fit one OU position vector from a fixed residual definition."""
+
+    history = np.asarray(residual_history, dtype=np.float64)
+    if history.ndim != 2 or history.shape[0] < 3:
+        raise ValueError("residual_history must have at least three time rows.")
+    positions = np.zeros(history.shape[1], dtype=np.float64)
+    valid = np.all(np.isfinite(history), axis=0)
+    for column in np.flatnonzero(valid):
+        positions[column] = ou_threshold_weight(
+            fit_ou(np.cumsum(history[:, column])),
+            entry_threshold=entry_threshold,
+            min_r_squared=min_r_squared,
+        )
     return positions
 
 

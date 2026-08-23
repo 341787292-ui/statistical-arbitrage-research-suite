@@ -10,6 +10,7 @@ import numpy as np
 from ashare_stat_arb.config import DEFAULT_CONFIG
 from ashare_stat_arb.data_pipeline import load_panel
 from ashare_stat_arb.residual_audit import audit_residual_continuity
+from ashare_stat_arb.residual_comparison import compare_residual_definitions
 from ashare_stat_arb.residual_diagnostics import (
     evaluate_residual_positions,
     ou_residual_positions,
@@ -89,6 +90,7 @@ class AshareResearchTools:
             "inspect_ashare_direction_diagnostic",
             "run_fixed_residual_ou_mechanism_test",
             "audit_ashare_residual_continuity",
+            "compare_ashare_residual_definitions",
         )
 
     def invoke(self, name: str) -> dict[str, Any]:
@@ -98,6 +100,8 @@ class AshareResearchTools:
             return self.run_residual_mechanism_test()
         if name == "audit_ashare_residual_continuity":
             return self.audit_residual_continuity()
+        if name == "compare_ashare_residual_definitions":
+            return self.compare_residual_definitions()
         raise KeyError(f"A-share tool '{name}' is not allowed. Available: {self.names}")
 
     def inspect_direction_diagnostic(self) -> dict[str, Any]:
@@ -211,6 +215,50 @@ class AshareResearchTools:
                 "visible_refit_day_spike": (
                     audit.refit_residual_scale_ratio >= 1.5
                     or audit.refit_alpha_change_ratio >= 1.5
+                ),
+            },
+        }
+
+    def compare_residual_definitions(self) -> dict[str, Any]:
+        if self.contract.parameter_search_allowed:
+            raise RuntimeError("This tool only supports a frozen no-search comparison.")
+        panel, signal = self._panel_and_signal()
+        start = max(
+            int(
+                np.searchsorted(
+                    panel.dates,
+                    np.datetime64(DEFAULT_CONFIG.periods.development_start),
+                )
+            ),
+            self.contract.covariance_window + self.contract.residual_lookback - 1,
+        )
+        comparison = compare_residual_definitions(
+            panel.adjusted_returns(),
+            panel.dates,
+            panel.member,
+            signal,
+            start=start,
+            n_factors=self.contract.factor_count,
+            covariance_window=self.contract.covariance_window,
+            loading_window=self.contract.loading_window,
+            residual_lookback=self.contract.residual_lookback,
+            entry_threshold=self.contract.ou_entry_threshold,
+            min_r_squared=self.contract.ou_min_r_squared,
+        )
+        result = comparison.to_dict()
+        return {
+            "experiment": "fixed_residual_definition_comparison",
+            "scope": "pre-registered diagnostic; no parameter search or holdout access",
+            "comparison": result,
+            "assessment": {
+                "current_composition_improves_sharpe": comparison.sharpe_delta > 0.0,
+                "current_composition_rescues_mechanism": (
+                    comparison.current_composition_gate_passed
+                    and comparison.sharpe_delta > 0.0
+                ),
+                "stitched_asof_gate_passed": (
+                    comparison.stitched_asof.annualized_sharpe
+                    >= comparison.mechanism_sharpe_gate
                 ),
             },
         }

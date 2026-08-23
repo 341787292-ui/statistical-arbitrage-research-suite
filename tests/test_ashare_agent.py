@@ -140,6 +140,29 @@ class FakeAshareTools:
                     "visible_refit_day_spike": False,
                 },
             }
+        if name == "compare_ashare_residual_definitions":
+            return {
+                "comparison": {
+                    "stitched_asof": {
+                        "annualized_mean": 0.004,
+                        "annualized_sharpe": 0.05,
+                        "active_day_rate": 0.94,
+                        "average_daily_turnover": 0.98,
+                    },
+                    "current_composition": {
+                        "annualized_mean": -0.02,
+                        "annualized_sharpe": -0.25,
+                        "active_day_rate": 0.98,
+                        "average_daily_turnover": 1.06,
+                    },
+                    "current_composition_gate_passed": False,
+                },
+                "assessment": {
+                    "current_composition_improves_sharpe": False,
+                    "current_composition_rescues_mechanism": False,
+                    "stitched_asof_gate_passed": False,
+                },
+            }
         raise KeyError(name)
 
 
@@ -196,6 +219,7 @@ class AshareAgentTests(unittest.TestCase):
             self.assertEqual(result.status, "completed")
             self.assertIn("quant_execution", phases)
             self.assertIn("continuity_audit", phases)
+            self.assertIn("residual_definition_comparison", phases)
             self.assertIn("reflection", phases)
             self.assertEqual(
                 result.hypotheses[1]["status_after_new_experiment"],
@@ -204,6 +228,10 @@ class AshareAgentTests(unittest.TestCase):
             self.assertEqual(
                 result.hypotheses[3]["status_after_new_experiment"],
                 "structural_confounder_not_confirmed_causal",
+            )
+            self.assertEqual(
+                result.hypotheses[4]["status_after_new_experiment"],
+                "rejected",
             )
             self.assertFalse(result.final_assessment["parameter_search_authorized"])
             self.assertFalse(result.final_assessment["holdout_accessed"])

@@ -13,6 +13,7 @@ ashare_stat_arb panel + direction diagnostic
   -> four competing hypotheses
   -> one fixed residual-space experiment
   -> residual coverage and PCA-refit continuity audit
+  -> one pre-registered residual-definition comparison
   -> reflected Agent report
 ```
 
@@ -25,6 +26,7 @@ A-share product's research contract.
 - `inspect_ashare_direction_diagnostic`
 - `run_fixed_residual_ou_mechanism_test`
 - `audit_ashare_residual_continuity`
+- `compare_ashare_residual_definitions`
 
 Any other tool name is rejected. The experiment contract also records the
 panel fingerprint and the fixed PCA/OU settings.
@@ -40,15 +42,18 @@ On the free 2018-2022 BaoStock pilot, the Agent found:
   2.42 model versions per history;
 - refit-day residual scale is 1.092 times other days and alpha change is 1.001
   times other days, so model mixing is not established as the cause;
+- recomputing the 30-day history under the current PCA composition worsens
+  annualized residual return from 0.45% to -2.31% and Sharpe from 0.047 to
+  -0.259;
 - parameter search authorized: no;
 - sealed holdout accessed: no.
 
 This is a useful negative result. The Agent completed an evidence-to-hypothesis-
 to-experiment-to-reflection loop and stopped the project from tuning an
-unvalidated mechanism. Its next action is one pre-registered comparison between
-the current stitched residual histories and histories recomputed under each
-current composition matrix. It will not choose between them using the sealed
-holdout.
+unvalidated mechanism. The comparison rejects monthly residual stitching as
+the explanation, so the Agent closes OU tuning on this pilot. Its next allowed
+step is a model-free residual predictability audit, not a parameter search or
+holdout run.
 
 ## Run
 

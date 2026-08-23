@@ -6,8 +6,8 @@ statistical-arbitrage research.
 | Product | Purpose | Current status |
 |---|---|---|
 | `paper_reproduction/` | Internship project: reproduce *Deep Learning Statistical Arbitrage* | OU and all three five-factor Fourier+FFN public-data approximations complete |
-| `ashare_stat_arb/` | Applied research: adapt the method to A-share market constraints | Free BaoStock PCA-OU baseline and residual-continuity audit complete; full-universe study remains open |
-| `quant_research_agent/` | Research project: build a statistical-arbitrage research Agent | Deterministic MVP plus bounded A-share mechanism and continuity workflow complete |
+| `ashare_stat_arb/` | Applied research: adapt the method to A-share market constraints | Free BaoStock PCA-OU baseline and fixed residual-definition comparison complete; full-universe study remains open |
+| `quant_research_agent/` | Research project: build a statistical-arbitrage research Agent | Deterministic MVP plus bounded A-share mechanism-validation workflow complete |
 
 The products share research concepts, but they do not share empirical claims.
 The U.S. paper result, A-share adaptation, and Agent evaluation must always be
@@ -104,10 +104,10 @@ reproduction of the paper.
 
 The A-share product is connected through a deliberately narrow adapter. The
 Agent can inspect the frozen 2018-2022 diagnostic and run one fixed residual-
-space OU mechanism test plus a PCA residual-continuity audit. It cannot search
-parameters or read the sealed 2023-2025 holdout. This keeps the research
-product separate from the Agent while still allowing the Agent to test
-executable hypotheses.
+space OU mechanism test, a PCA residual-continuity audit, and one pre-registered
+residual-definition comparison. It cannot search parameters or read the sealed
+2023-2025 holdout. This keeps the research product separate from the Agent
+while still allowing the Agent to test executable hypotheses.
 
 Run it locally:
 
@@ -130,8 +130,10 @@ space paper direction has an annualized mean of 0.45% and a Sharpe ratio of
 0.047, while residual-position turnover is 97.57% per day. The Agent therefore
 does not authorize parameter optimization or holdout access. All 881 usable
 30-day histories mix monthly PCA models, but refit-day changes are not visibly
-larger than ordinary days. The Agent treats this as an unresolved confounder
-and requests one fixed residual-definition comparison next.
+larger than ordinary days. Recomputing each history under the current PCA
+composition worsens annualized residual return to -2.31% and Sharpe to -0.259.
+The Agent therefore rejects residual stitching as the explanation and closes
+OU tuning on this pilot.
 
 An optional OpenAI-backed extraction path is available through `.env`; API
 keys must never be committed.

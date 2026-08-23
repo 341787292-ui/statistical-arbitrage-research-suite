@@ -156,10 +156,26 @@ refit-day alpha change is nearly identical to other days and the residual-
 scale increase is modest. The correct conclusion is therefore an unresolved
 confounder, not a confirmed discontinuity bug.
 
-The next experiment is pre-registered as a single fixed comparison: retain the
-current stitched as-of residual history versus recomputing each 30-day history
-under its current composition matrix. All other parameters and the holdout
-boundary remain frozen. Parameter tuning remains unauthorized.
+## Fixed residual-definition comparison
+
+The pre-registered comparison retained all PCA/OU parameters and the holdout
+boundary. It changed only how the trailing residual history is defined.
+
+| Definition | Annualized residual return | Sharpe | Active days | Daily turnover |
+|---|---:|---:|---:|---:|
+| Stitched as-of | 0.45% | 0.047 | 94.32% | 97.57% |
+| Current composition | -2.31% | -0.259 | 98.82% | 106.94% |
+
+Re-expressing the full 30-day history and next return under the decision-day
+PCA composition makes the result worse: annualized mean falls by 2.76
+percentage points and Sharpe falls by 0.306. Neither definition passes the
+pre-registered residual-mechanism Sharpe gate of 0.5. Monthly stitching is
+therefore rejected as the explanation for the weak OU result.
+
+The OU tuning branch is closed for this 100-name free-data pilot. The next
+research gate, if pursued, is a model-free residual predictability audit that
+describes autocorrelation, reversal horizon, and cross-sectional stability
+without selecting OU thresholds or opening the 2023-2025 holdout.
 
 ### Reproduce
 
@@ -169,5 +185,6 @@ python -m ashare_stat_arb.download_baostock --start 2018-01-01 --end 2022-12-31 
 python -m ashare_stat_arb.run_empirical_baseline --panel ashare_stat_arb/data/baostock_csi500_pilot100_2018_2022.npz --output ashare_stat_arb/output/baostock_pilot100_pca_ou.json
 python -m ashare_stat_arb.run_signal_diagnostics --panel ashare_stat_arb/data/baostock_csi500_pilot100_2018_2022.npz --output ashare_stat_arb/output/baostock_pilot100_signal_diagnostics.json
 python -m ashare_stat_arb.run_residual_audit
+python -m ashare_stat_arb.run_residual_comparison
 python run_ashare_agent.py
 ```

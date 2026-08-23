@@ -38,6 +38,8 @@
 - A residual-continuity audit measures missing model days, cross-sectional
   coverage, PCA model versions within each OU history, universe overlap, and
   refit-day residual/alpha changes.
+- A pre-registered comparison tests stitched as-of residual histories against
+  histories recomputed under the decision-day PCA composition, with no search.
 
 ## Deterministic engineering run
 
@@ -83,21 +85,22 @@ refit-day residual scale is only 1.092 times that of other model days, while
 refit-day alpha change is 1.001 times other days. Model mixing is therefore an
 unresolved structural confounder, not a demonstrated failure cause.
 
+The fixed residual-definition comparison does not rescue the mechanism. The
+current-composition definition produces -2.31% annualized residual return,
+Sharpe -0.259, and 106.94% daily residual-position turnover, compared with
++0.45%, 0.047, and 97.57% for the stitched definition. Neither passes the
+frozen Sharpe gate of 0.5.
+
 ## Next milestone
 
-Pre-register one fixed residual-definition comparison on the existing
-2018-2022 pilot:
+Close OU parameter tuning on this pilot. If research continues, pre-register a
+model-free residual predictability audit covering lagged autocorrelation,
+reversal horizon, cross-sectional stability, and subperiod consistency. This
+audit must not choose OU thresholds, train Fourier/neural models, or access the
+2023-2025 holdout.
 
-1. retain the current stitched as-of residual history;
-2. recompute each 30-day OU history under the current composition matrix;
-3. keep PCA and OU parameters, dates, costs, and evaluation rules unchanged;
-4. compare residual continuity and next-day residual performance without
-   opening the 2023-2025 holdout;
-5. stop again if neither definition establishes a meaningful mechanism.
-
-Only after this comparison should the project consider a slower signal-to-
-portfolio mapping, the full CSI 500 universe, or Fourier/deep-learning signal
-models.
+Only evidence of stable residual predictability should justify a broader
+universe run or a fixed Fourier/deep-learning signal experiment.
 
 The first data audit must report:
 

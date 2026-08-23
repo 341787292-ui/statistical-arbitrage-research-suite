@@ -16,6 +16,62 @@ class MonthlyPCASignalResult:
     refit_dates: tuple[str, ...]
 
 
+def fit_pca_residual_map(
+    history: np.ndarray,
+    eligible: np.ndarray,
+    *,
+    n_factors: int,
+    loading_window: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Fit the paper-aligned PCA residual map from one historical window."""
+
+    returns = np.asarray(history, dtype=np.float64)
+    eligibility = np.asarray(eligible, dtype=bool)
+    if returns.ndim != 2 or eligibility.shape != (returns.shape[1],):
+        raise ValueError("history and eligible must align on the asset dimension.")
+    if loading_window < 1 or loading_window > returns.shape[0]:
+        raise ValueError("loading_window must fit inside the history window.")
+    if n_factors < 0:
+        raise ValueError("n_factors must be nonnegative.")
+
+    indices = np.flatnonzero(eligibility & np.all(np.isfinite(returns), axis=0))
+    if indices.size <= n_factors:
+        return indices, np.empty((0, 0), dtype=np.float64)
+
+    active = returns[:, indices]
+    means = active.mean(axis=0)
+    vol = np.sqrt(np.mean((active - means) ** 2, axis=0))
+    nonconstant = vol > np.finfo(np.float64).eps
+    indices = indices[nonconstant]
+    active = returns[:, indices]
+    if indices.size <= n_factors:
+        return indices, np.empty((0, 0), dtype=np.float64)
+
+    means = active.mean(axis=0)
+    vol = np.sqrt(np.mean((active - means) ** 2, axis=0))
+    if n_factors == 0:
+        return indices, np.eye(indices.size, dtype=np.float64)
+
+    standardized = (active - means) / vol
+    correlation = standardized.T @ standardized
+    lower = indices.size - n_factors
+    eigenvalues, directions = eigh(
+        correlation,
+        subset_by_index=(lower, indices.size - 1),
+        check_finite=False,
+    )
+    directions = directions[:, np.argsort(eigenvalues)[::-1]]
+    loading_returns = active[-loading_window:]
+    factor_history = (loading_returns / vol) @ directions
+    factor_loadings = np.linalg.lstsq(
+        factor_history,
+        loading_returns,
+        rcond=None,
+    )[0]
+    phi = np.eye(indices.size) - factor_loadings.T @ directions.T @ np.diag(1.0 / vol)
+    return indices, phi
+
+
 def ou_stock_alpha(
     residual_returns: np.ndarray,
     composition_matrices: np.ndarray,
@@ -117,42 +173,12 @@ def rolling_monthly_pca_ou_stock_alpha(
         month = str(trading_dates[t].astype("datetime64[M]"))
         if month != previous_month:
             history = returns[t - covariance_window : t]
-            eligible = membership[t] & np.all(np.isfinite(history), axis=0)
-            current_indices = np.flatnonzero(eligible)
-            current_phi = np.empty((0, 0), dtype=np.float64)
-            if current_indices.size > n_factors:
-                history_active = history[:, current_indices]
-                means = history_active.mean(axis=0)
-                vol = np.sqrt(np.mean((history_active - means) ** 2, axis=0))
-                nonconstant = vol > np.finfo(np.float64).eps
-                current_indices = current_indices[nonconstant]
-                history_active = history[:, current_indices]
-                means = history_active.mean(axis=0)
-                vol = np.sqrt(np.mean((history_active - means) ** 2, axis=0))
-                if current_indices.size > n_factors:
-                    if n_factors == 0:
-                        current_phi = np.eye(current_indices.size)
-                    else:
-                        standardized = (history_active - means) / vol
-                        correlation = standardized.T @ standardized
-                        lower = current_indices.size - n_factors
-                        eigenvalues, directions = eigh(
-                            correlation,
-                            subset_by_index=(lower, current_indices.size - 1),
-                            check_finite=False,
-                        )
-                        directions = directions[:, np.argsort(eigenvalues)[::-1]]
-                        loading_returns = history_active[-loading_window:]
-                        factor_history = (loading_returns / vol) @ directions
-                        factor_loadings = np.linalg.lstsq(
-                            factor_history,
-                            loading_returns,
-                            rcond=None,
-                        )[0]
-                        current_phi = (
-                            np.eye(current_indices.size)
-                            - factor_loadings.T @ directions.T @ np.diag(1.0 / vol)
-                        )
+            current_indices, current_phi = fit_pca_residual_map(
+                history,
+                membership[t],
+                n_factors=n_factors,
+                loading_window=loading_window,
+            )
             previous_month = month
             refit_dates.append(str(trading_dates[t]))
 

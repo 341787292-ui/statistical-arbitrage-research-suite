@@ -19,6 +19,7 @@ class AshareAgentResult:
     hypotheses: list[dict[str, Any]]
     experiment_result: dict[str, Any]
     audit_result: dict[str, Any]
+    comparison_result: dict[str, Any]
     final_assessment: dict[str, Any]
     trace: list[dict[str, Any]] = field(default_factory=list)
     report_markdown: str = ""
@@ -100,11 +101,17 @@ def run_ashare_diagnostic_agent(
             "status_before_new_experiment": "unresolved",
             "evidence": "Requires a residual coverage and model-version continuity audit.",
         },
+        {
+            "id": "H5",
+            "claim": "Monthly residual stitching masks an otherwise valid OU mechanism.",
+            "status_before_new_experiment": "unresolved",
+            "evidence": "Requires the pre-registered residual-definition comparison.",
+        },
     ]
     record(
         "hypothesis_generation",
         "Form mutually distinguishable explanations",
-        "Created sign, residual-mechanism, turnover, and continuity hypotheses.",
+        "Created sign, residual-mechanism, turnover, continuity, and definition hypotheses.",
     )
 
     experiment = toolset.invoke("run_fixed_residual_ou_mechanism_test")
@@ -138,23 +145,53 @@ def run_ashare_diagnostic_agent(
         ),
     )
 
-    if mechanism["paper_direction_sharpe_above_half"]:
+    comparison_result = toolset.invoke("compare_ashare_residual_definitions")
+    comparison = comparison_result["comparison"]
+    comparison_assessment = comparison_result["assessment"]
+    hypotheses[4]["status_after_new_experiment"] = (
+        "supported"
+        if comparison_assessment["current_composition_rescues_mechanism"]
+        else "rejected"
+    )
+    record(
+        "residual_definition_comparison",
+        "Compare stitched as-of and current-composition residual histories",
+        (
+            f"Stitched Sharpe={comparison['stitched_asof']['annualized_sharpe']:.3f}; "
+            f"current-composition Sharpe="
+            f"{comparison['current_composition']['annualized_sharpe']:.3f}; "
+            f"gate passed={comparison['current_composition_gate_passed']}."
+        ),
+    )
+
+    if (
+        mechanism["paper_direction_sharpe_above_half"]
+        or comparison_assessment["current_composition_rescues_mechanism"]
+    ):
         h2_status = "supported"
     elif mechanism["reversal_outperforms_original"]:
         h2_status = "rejected"
+    elif not comparison["current_composition_gate_passed"]:
+        h2_status = "not_supported_in_current_pilot"
     else:
         h2_status = "inconclusive"
     hypotheses[1]["status_after_new_experiment"] = h2_status
 
-    if h2_status == "supported":
+    if comparison_assessment["current_composition_rescues_mechanism"]:
         verdict = (
-            "Residual mean reversion clears the fixed paper-direction mechanism gate. "
-            "Monthly model mixing remains a separate continuity risk."
+            "Recomputing each OU history under its current PCA composition rescues the "
+            "fixed mechanism gate, so residual-definition consistency matters."
         )
         next_action = (
-            "Resolve the residual-definition comparison before testing slower "
-            "signal-to-portfolio mapping."
+            "Replicate the fixed comparison on a broader development universe before "
+            "testing any signal-to-portfolio mapping."
         )
+    elif h2_status == "supported":
+        verdict = (
+            "Residual mean reversion clears the fixed paper-direction mechanism gate, "
+            "but current-composition re-expression does not improve it."
+        )
+        next_action = "Test a slower mapping with explicit turnover budgets."
     elif h2_status == "rejected":
         verdict = (
             "The paper-direction residual mechanism is not supported; reversal performs "
@@ -163,22 +200,26 @@ def run_ashare_diagnostic_agent(
         next_action = (
             "Resolve the residual-definition comparison before any parameter or model search."
         )
-    elif audit_assessment["all_ou_windows_cross_refits"]:
+    elif h2_status == "not_supported_in_current_pilot":
         verdict = (
-            "The OU result is inconclusive and every valid 30-day history mixes "
-            "multiple monthly PCA models. Refit-day jumps are not visibly larger, "
-            "so model mixing is an unresolved confounder rather than a proven cause."
+            "Neither residual definition passes the fixed OU mechanism gate. "
+            "Current-composition re-expression performs worse, so monthly residual "
+            "stitching does not explain the weak result."
         )
         next_action = (
-            "Pre-register one fixed comparison between stitched as-of residuals and "
-            "30-day histories recomputed under the current composition matrix."
+            "Close OU tuning on this pilot and pre-register a model-free residual "
+            "predictability audit before any Fourier or neural signal model."
         )
     else:
         verdict = "The fixed residual test is inconclusive and does not justify optimization."
         next_action = "Audit residual coverage and construction before further experiments."
     final = {
         "verdict": verdict,
-        "confidence": "medium" if h2_status in {"supported", "rejected"} else "low",
+        "confidence": (
+            "medium"
+            if h2_status in {"supported", "rejected", "not_supported_in_current_pilot"}
+            else "low"
+        ),
         "next_action": next_action,
         "parameter_search_authorized": False,
         "holdout_accessed": False,
@@ -196,6 +237,7 @@ def run_ashare_diagnostic_agent(
         hypotheses,
         experiment,
         audit_result,
+        comparison_result,
         final,
         trace,
     )
@@ -205,6 +247,7 @@ def run_ashare_diagnostic_agent(
         hypotheses=hypotheses,
         experiment_result=experiment,
         audit_result=audit_result,
+        comparison_result=comparison_result,
         final_assessment=final,
         trace=trace,
         report_markdown=report,
@@ -217,6 +260,7 @@ def _render_report(
     hypotheses: list[dict[str, Any]],
     experiment: dict[str, Any],
     audit_result: dict[str, Any],
+    comparison_result: dict[str, Any],
     final: dict[str, Any],
     trace: list[dict[str, Any]],
 ) -> str:
@@ -258,6 +302,7 @@ def _render_report(
             f"{item['average_daily_turnover']:.2%} |"
         )
     audit = audit_result["audit"]
+    comparison = comparison_result["comparison"]
     lines.extend(
         [
             "",
@@ -268,6 +313,24 @@ def _render_report(
             f"- Average PCA models per OU window: {audit['average_models_per_ou_window']:.2f}",
             f"- Refit residual-scale ratio: {audit['refit_residual_scale_ratio']:.3f}",
             f"- Refit alpha-change ratio: {audit['refit_alpha_change_ratio']:.3f}",
+            "",
+            "## Residual Definition Comparison",
+            "| Definition | Annualized mean | Sharpe | Active days | Daily turnover |",
+            "| --- | ---: | ---: | ---: | ---: |",
+            (
+                f"| stitched as-of | "
+                f"{comparison['stitched_asof']['annualized_mean']:.2%} | "
+                f"{comparison['stitched_asof']['annualized_sharpe']:.3f} | "
+                f"{comparison['stitched_asof']['active_day_rate']:.2%} | "
+                f"{comparison['stitched_asof']['average_daily_turnover']:.2%} |"
+            ),
+            (
+                f"| current composition | "
+                f"{comparison['current_composition']['annualized_mean']:.2%} | "
+                f"{comparison['current_composition']['annualized_sharpe']:.3f} | "
+                f"{comparison['current_composition']['active_day_rate']:.2%} | "
+                f"{comparison['current_composition']['average_daily_turnover']:.2%} |"
+            ),
             "",
             "## Final Assessment",
             f"- Verdict: {final['verdict']}",
