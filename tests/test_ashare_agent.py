@@ -123,6 +123,23 @@ class FakeAshareTools:
                     "reversal_outperforms_original": True,
                 },
             }
+        if name == "audit_ashare_residual_continuity":
+            return {
+                "audit": {
+                    "model_day_rate": 0.98,
+                    "ou_candidate_windows": 100,
+                    "cross_model_ou_window_rate": 1.0,
+                    "average_models_per_ou_window": 2.4,
+                    "refit_residual_scale_ratio": 1.1,
+                    "refit_alpha_change_ratio": 1.0,
+                },
+                "assessment": {
+                    "all_ou_windows_cross_refits": True,
+                    "coverage_complete_when_model_runs": True,
+                    "model_day_gap_detected": True,
+                    "visible_refit_day_spike": False,
+                },
+            }
         raise KeyError(name)
 
 
@@ -178,7 +195,16 @@ class AshareAgentTests(unittest.TestCase):
             phases = {item["phase"] for item in result.trace}
             self.assertEqual(result.status, "completed")
             self.assertIn("quant_execution", phases)
+            self.assertIn("continuity_audit", phases)
             self.assertIn("reflection", phases)
+            self.assertEqual(
+                result.hypotheses[1]["status_after_new_experiment"],
+                "rejected",
+            )
+            self.assertEqual(
+                result.hypotheses[3]["status_after_new_experiment"],
+                "structural_confounder_not_confirmed_causal",
+            )
             self.assertFalse(result.final_assessment["parameter_search_authorized"])
             self.assertFalse(result.final_assessment["holdout_accessed"])
             self.assertIn("A-Share Quant Research Agent Report", result.report_markdown)

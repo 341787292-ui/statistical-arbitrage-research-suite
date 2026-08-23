@@ -35,6 +35,9 @@
   PCA/OU parameters, and holdout boundary before invoking A-share tools.
 - The Agent's fixed residual-space OU mechanism test is implemented, tested,
   and run on the same pilot without parameter search.
+- A residual-continuity audit measures missing model days, cross-sectional
+  coverage, PCA model versions within each OU history, universe overlap, and
+  refit-day residual/alpha changes.
 
 ## Deterministic engineering run
 
@@ -72,12 +75,29 @@ turnover. The exact reversal produced -0.45% and Sharpe -0.047. The mechanism
 is therefore inconclusive rather than reversed, and parameter optimization is
 not authorized.
 
+The continuity audit covers 963 trading days after the first PCA refit. A
+residual model is available on 939 days (97.51%); all member residuals are
+finite whenever the model runs. Every one of 881 usable 30-day OU histories
+crosses a monthly refit and contains 2.42 PCA versions on average. However,
+refit-day residual scale is only 1.092 times that of other model days, while
+refit-day alpha change is 1.001 times other days. Model mixing is therefore an
+unresolved structural confounder, not a demonstrated failure cause.
+
 ## Next milestone
 
-Audit residual coverage, monthly PCA-refit continuity, loading estimation, and
-one-day timing before tuning the long-only portfolio. Only after that audit
-passes should the project pre-register a slower signal-to-portfolio mapping,
-run the full CSI 500 universe, or add Fourier/deep-learning signal models.
+Pre-register one fixed residual-definition comparison on the existing
+2018-2022 pilot:
+
+1. retain the current stitched as-of residual history;
+2. recompute each 30-day OU history under the current composition matrix;
+3. keep PCA and OU parameters, dates, costs, and evaluation rules unchanged;
+4. compare residual continuity and next-day residual performance without
+   opening the 2023-2025 holdout;
+5. stop again if neither definition establishes a meaningful mechanism.
+
+Only after this comparison should the project consider a slower signal-to-
+portfolio mapping, the full CSI 500 universe, or Fourier/deep-learning signal
+models.
 
 The first data audit must report:
 

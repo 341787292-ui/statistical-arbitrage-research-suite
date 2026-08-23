@@ -129,15 +129,37 @@ reallocation also confirms that the raw policy is far too unstable to map
 directly into a cash-equity index-enhancement portfolio. The Agent therefore
 rejected parameter optimization and holdout access.
 
-The next research gate is an audit of residual construction and continuity:
+## Residual continuity audit
 
-1. quantify residual missingness and effective cross-section through time;
-2. test whether monthly PCA refits create discontinuities inside 30-day OU
-   histories;
-3. verify factor loading and next-day residual timing against a small manual
-   fixture;
-4. only if that audit passes, define a pre-registered slower mapping experiment
-   on the existing development/validation sample.
+The next gate audited the residual construction before any tuning. A synthetic
+manual fixture confirms that each monthly refit date matches a daily PCA fit
+using the same information set, which checks loading estimation and one-day
+timing. The real pilot produced:
+
+| Check | Result |
+|---|---:|
+| Trading days after first refit | 963 |
+| Days with a residual model | 939 (97.51%) |
+| Residual coverage on model days | 100.00% |
+| Median/minimum active stocks | 100 / 100 |
+| Usable 30-day OU histories | 881 |
+| Histories crossing a PCA refit | 100.00% |
+| Average / maximum PCA versions per history | 2.42 / 3 |
+| Median refit-universe Jaccard | 1.000 |
+| Refit-day residual-scale ratio | 1.092 |
+| Refit-day alpha-change ratio | 1.001 |
+
+The 30-day OU history structurally mixes residuals produced by different
+monthly PCA models. This is expected when the refit interval is shorter than
+the lookback, but it is not by itself a causal explanation for failure. The
+refit-day alpha change is nearly identical to other days and the residual-
+scale increase is modest. The correct conclusion is therefore an unresolved
+confounder, not a confirmed discontinuity bug.
+
+The next experiment is pre-registered as a single fixed comparison: retain the
+current stitched as-of residual history versus recomputing each 30-day history
+under its current composition matrix. All other parameters and the holdout
+boundary remain frozen. Parameter tuning remains unauthorized.
 
 ### Reproduce
 
@@ -146,5 +168,6 @@ pip install -r ashare_stat_arb/requirements.txt
 python -m ashare_stat_arb.download_baostock --start 2018-01-01 --end 2022-12-31 --max-symbols 100 --output ashare_stat_arb/data/baostock_csi500_pilot100_2018_2022.npz
 python -m ashare_stat_arb.run_empirical_baseline --panel ashare_stat_arb/data/baostock_csi500_pilot100_2018_2022.npz --output ashare_stat_arb/output/baostock_pilot100_pca_ou.json
 python -m ashare_stat_arb.run_signal_diagnostics --panel ashare_stat_arb/data/baostock_csi500_pilot100_2018_2022.npz --output ashare_stat_arb/output/baostock_pilot100_signal_diagnostics.json
+python -m ashare_stat_arb.run_residual_audit
 python run_ashare_agent.py
 ```

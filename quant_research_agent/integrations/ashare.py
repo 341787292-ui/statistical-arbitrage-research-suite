@@ -9,6 +9,7 @@ import numpy as np
 
 from ashare_stat_arb.config import DEFAULT_CONFIG
 from ashare_stat_arb.data_pipeline import load_panel
+from ashare_stat_arb.residual_audit import audit_residual_continuity
 from ashare_stat_arb.residual_diagnostics import (
     evaluate_residual_positions,
     ou_residual_positions,
@@ -79,12 +80,15 @@ class AshareResearchTools:
 
     def __init__(self, contract: AshareExperimentContract) -> None:
         self.contract = contract
+        self._cached_panel: Any | None = None
+        self._cached_signal: Any | None = None
 
     @property
     def names(self) -> tuple[str, ...]:
         return (
             "inspect_ashare_direction_diagnostic",
             "run_fixed_residual_ou_mechanism_test",
+            "audit_ashare_residual_continuity",
         )
 
     def invoke(self, name: str) -> dict[str, Any]:
@@ -92,6 +96,8 @@ class AshareResearchTools:
             return self.inspect_direction_diagnostic()
         if name == "run_fixed_residual_ou_mechanism_test":
             return self.run_residual_mechanism_test()
+        if name == "audit_ashare_residual_continuity":
+            return self.audit_residual_continuity()
         raise KeyError(f"A-share tool '{name}' is not allowed. Available: {self.names}")
 
     def inspect_direction_diagnostic(self) -> dict[str, Any]:
@@ -135,20 +141,7 @@ class AshareResearchTools:
     def run_residual_mechanism_test(self) -> dict[str, Any]:
         if self.contract.parameter_search_allowed:
             raise RuntimeError("This tool only supports a frozen no-search experiment.")
-        panel = load_panel(self.contract.panel_path)
-        if panel.fingerprint() != self.contract.data_fingerprint:
-            raise ValueError("A-share panel changed after contract creation.")
-        signal = rolling_monthly_pca_ou_stock_alpha(
-            panel.adjusted_returns(),
-            panel.dates,
-            panel.member,
-            n_factors=self.contract.factor_count,
-            covariance_window=self.contract.covariance_window,
-            loading_window=self.contract.loading_window,
-            residual_lookback=self.contract.residual_lookback,
-            entry_threshold=self.contract.ou_entry_threshold,
-            min_r_squared=self.contract.ou_min_r_squared,
-        )
+        panel, signal = self._panel_and_signal()
         positions = ou_residual_positions(
             signal.residual_returns,
             lookback=self.contract.residual_lookback,
@@ -192,3 +185,53 @@ class AshareResearchTools:
                 ),
             },
         }
+
+    def audit_residual_continuity(self) -> dict[str, Any]:
+        panel, signal = self._panel_and_signal()
+        audit = audit_residual_continuity(
+            signal,
+            panel.dates,
+            panel.member,
+            lookback=self.contract.residual_lookback,
+        )
+        result = audit.to_dict()
+        return {
+            "experiment": "fixed_pca_residual_continuity_audit",
+            "scope": "diagnostic only; no parameter search or holdout access",
+            "audit": result,
+            "assessment": {
+                "all_ou_windows_cross_refits": (
+                    audit.ou_candidate_windows > 0
+                    and audit.cross_model_ou_window_rate == 1.0
+                ),
+                "coverage_complete_when_model_runs": (
+                    audit.member_residual_coverage >= 0.999
+                ),
+                "model_day_gap_detected": audit.model_day_rate < 0.99,
+                "visible_refit_day_spike": (
+                    audit.refit_residual_scale_ratio >= 1.5
+                    or audit.refit_alpha_change_ratio >= 1.5
+                ),
+            },
+        }
+
+    def _panel_and_signal(self) -> tuple[Any, Any]:
+        if self._cached_panel is not None and self._cached_signal is not None:
+            return self._cached_panel, self._cached_signal
+        panel = load_panel(self.contract.panel_path)
+        if panel.fingerprint() != self.contract.data_fingerprint:
+            raise ValueError("A-share panel changed after contract creation.")
+        signal = rolling_monthly_pca_ou_stock_alpha(
+            panel.adjusted_returns(),
+            panel.dates,
+            panel.member,
+            n_factors=self.contract.factor_count,
+            covariance_window=self.contract.covariance_window,
+            loading_window=self.contract.loading_window,
+            residual_lookback=self.contract.residual_lookback,
+            entry_threshold=self.contract.ou_entry_threshold,
+            min_r_squared=self.contract.ou_min_r_squared,
+        )
+        self._cached_panel = panel
+        self._cached_signal = signal
+        return panel, signal

@@ -79,6 +79,7 @@ baseline:
 python -m ashare_stat_arb.download_baostock --start 2018-01-01 --end 2022-12-31 --max-symbols 100 --output ashare_stat_arb/data/baostock_csi500_pilot100_2018_2022.npz
 python -m ashare_stat_arb.run_empirical_baseline --panel ashare_stat_arb/data/baostock_csi500_pilot100_2018_2022.npz --output ashare_stat_arb/output/baostock_pilot100_pca_ou.json
 python -m ashare_stat_arb.run_signal_diagnostics --panel ashare_stat_arb/data/baostock_csi500_pilot100_2018_2022.npz --output ashare_stat_arb/output/baostock_pilot100_signal_diagnostics.json
+python -m ashare_stat_arb.run_residual_audit
 python run_ashare_agent.py
 ```
 
@@ -95,9 +96,11 @@ The diagnostic command evaluates forward RankIC at 1, 5, 10, and 20 trading
 days and compares the original OU direction, its exact reversal, and a zero-
 signal benchmark portfolio. It does not search thresholds or select a model.
 
-The final command lets `quant_research_agent` consume those frozen results
-through an explicit adapter. It then runs one theoretical residual-space OU
-test. The adapter rejects changed data fingerprints, panels containing the
+The residual-audit command measures coverage and determines how many monthly
+PCA model versions appear inside each 30-day OU history. The final command lets
+`quant_research_agent` consume the frozen evidence through an explicit adapter,
+run one theoretical residual-space OU test, and perform the same continuity
+audit. The adapter rejects changed data fingerprints, panels containing the
 sealed 2023-2025 holdout, unknown tools, and parameter-search requests. Agent
 reports are generated locally under `reports/` and are not treated as A-share
 product results until the relevant evidence is summarized here.
