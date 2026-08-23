@@ -78,6 +78,7 @@ baseline:
 ```bash
 python -m ashare_stat_arb.download_baostock --start 2018-01-01 --end 2022-12-31 --max-symbols 100 --output ashare_stat_arb/data/baostock_csi500_pilot100_2018_2022.npz
 python -m ashare_stat_arb.run_empirical_baseline --panel ashare_stat_arb/data/baostock_csi500_pilot100_2018_2022.npz --output ashare_stat_arb/output/baostock_pilot100_pca_ou.json
+python -m ashare_stat_arb.run_signal_diagnostics --panel ashare_stat_arb/data/baostock_csi500_pilot100_2018_2022.npz --output ashare_stat_arb/output/baostock_pilot100_signal_diagnostics.json
 ```
 
 The `--max-symbols` run takes a deterministic subset from each historical
@@ -88,6 +89,10 @@ and signal-feasibility study, not an exact CSI 500 index reproduction.
 The optional JQData adapter remains available for licensed users. A
 product-grade study still needs exact historical benchmark weights and a more
 complete effective-dated market-rule dataset.
+
+The diagnostic command evaluates forward RankIC at 1, 5, 10, and 20 trading
+days and compares the original OU direction, its exact reversal, and a zero-
+signal benchmark portfolio. It does not search thresholds or select a model.
 
 Fee rates and market rules are experiment inputs rather than permanent code
 defaults. Every empirical run must record their effective dates.

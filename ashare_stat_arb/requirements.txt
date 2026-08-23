@@ -1,6 +1,7 @@
 baostock>=0.9.3,<1
 pandas>=2.2.2,<3
 pyarrow>=18,<24
+scipy>=1.13,<2
 statsmodels>=0.14,<1
 alphalens-reloaded>=0.4.5,<1
 cvxpy>=1.7,<2

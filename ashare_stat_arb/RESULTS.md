@@ -67,10 +67,50 @@ The next experiment is diagnostic rather than parameter optimization:
 4. test wider OU thresholds and slower rebalance schedules only after the
    predictive direction is confirmed.
 
+## Direction diagnostic
+
+The first diagnostic keeps all model and portfolio parameters frozen. It
+compares the original stock-space alpha, its exact sign reversal, and a zero-
+signal control portfolio on the same dates and data.
+
+### Forward RankIC
+
+Returns begin at the next trading-day open, matching the declared execution
+time.
+
+| Horizon | Mean RankIC | Annualized ICIR | Positive days |
+|---|---:|---:|---:|
+| 1 day | 0.0045 | 0.53 | 50.85% |
+| 5 days | -0.0019 | -0.22 | 48.91% |
+| 10 days | -0.0095 | -1.13 | 45.52% |
+| 20 days | -0.0023 | -0.28 | 48.37% |
+
+The signal fails the required mean RankIC of 0.015 at every horizon and does
+not maintain one predictive direction across horizons.
+
+### Portfolio controls
+
+| Variant | Gross excess | Cost drag | Net excess | Net IR | Daily two-way turnover |
+|---|---:|---:|---:|---:|---:|
+| Original OU | -2.57% | 7.09% | -9.66% | -3.22 | 6.13% |
+| Reversed OU | -0.59% | 7.01% | -7.60% | -2.54 | 6.06% |
+| Zero signal | 0.15% | 0.11% | 0.04% | 0.03 | 0.09% |
+
+Reversing the signal improves gross excess by about 1.98 percentage points,
+but it still trails the zero-signal control before costs. The failure is
+therefore not a simple sign error. Signal-induced daily reallocation explains
+almost all of the cost drag, while weak and unstable predictive content
+explains the pre-cost shortfall.
+
+The OU stock-space signal is finite for all member observations and nonzero on
+94.33% of them. This broad mapped exposure is a likely turnover amplifier and
+must be studied after the residual mechanism itself is validated.
+
 ### Reproduce
 
 ```bash
 pip install -r ashare_stat_arb/requirements.txt
 python -m ashare_stat_arb.download_baostock --start 2018-01-01 --end 2022-12-31 --max-symbols 100 --output ashare_stat_arb/data/baostock_csi500_pilot100_2018_2022.npz
 python -m ashare_stat_arb.run_empirical_baseline --panel ashare_stat_arb/data/baostock_csi500_pilot100_2018_2022.npz --output ashare_stat_arb/output/baostock_pilot100_pca_ou.json
+python -m ashare_stat_arb.run_signal_diagnostics --panel ashare_stat_arb/data/baostock_csi500_pilot100_2018_2022.npz --output ashare_stat_arb/output/baostock_pilot100_signal_diagnostics.json
 ```

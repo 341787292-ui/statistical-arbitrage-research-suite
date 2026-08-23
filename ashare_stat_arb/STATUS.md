@@ -29,6 +29,8 @@
 - A 2018-2022 real-data feasibility pilot runs on 100 point-in-time sampled
   constituents per month. It uses no future membership, adjusted open-to-open
   returns, raw prices for execution tests, and an equal-weight pilot benchmark.
+- Leakage-safe forward RankIC and original/reversed/neutral portfolio controls
+  are implemented and run on the same frozen pilot.
 
 ## Deterministic engineering run
 
@@ -52,16 +54,19 @@ long-only result is deliberately retained even though it fails admission:
 - net information ratio: -3.22;
 - average daily two-way turnover: 6.13%.
 
-This is a feasibility baseline, not an investable result. It shows that both
-the current OU alpha and its turnover require redesign before deeper model
-work is justified.
+This is a feasibility baseline, not an investable result. The direction
+diagnostic confirms that reversing the signal is insufficient: reversed gross
+excess is -0.59%, versus +0.15% for the zero-signal control. Mean RankIC is
+0.0045 at one day and negative at 5, 10, and 20 days. The signal also creates
+about 7% annualized cost drag, compared with 0.11% for the neutral portfolio.
 
 ## Next milestone
 
-Diagnose the signal before tuning it: measure forward RankIC by horizon, test
-the OU sign and threshold logic in residual space, and separate alpha decay
-from portfolio turnover. Only after that gate should the project run the full
-CSI 500 universe or add Fourier/deep-learning signal models.
+Test the OU policy directly in residual/long-short space before tuning the
+long-only portfolio. The next gate asks whether residual mean reversion exists
+before stock-space mapping and whether monthly PCA refits preserve a coherent
+30-day residual history. Only after that gate should the project tune turnover,
+run the full CSI 500 universe, or add Fourier/deep-learning signal models.
 
 The first data audit must report:
 
