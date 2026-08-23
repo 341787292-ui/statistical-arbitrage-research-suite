@@ -106,6 +106,39 @@ The OU stock-space signal is finite for all member observations and nonzero on
 94.33% of them. This broad mapped exposure is a likely turnover amplifier and
 must be studied after the residual mechanism itself is validated.
 
+## Fixed residual-space Agent experiment
+
+The Quant Research Agent was connected through a bounded adapter after the
+direction diagnostic. It froze the panel fingerprint, all PCA/OU parameters,
+and the 2023-2025 holdout boundary before running one new experiment. No model
+or threshold search was permitted.
+
+The experiment applies the paper-direction OU policy directly to the monthly
+PCA residual returns and evaluates the next residual return with unit gross
+exposure. It is a theoretical mechanism test, not an executable A-share
+portfolio.
+
+| Direction | Annualized residual return | Sharpe | Active days | Daily turnover |
+|---|---:|---:|---:|---:|
+| Paper direction | 0.45% | 0.047 | 94.32% | 97.57% |
+| Exact reversal | -0.45% | -0.047 | 94.32% | 97.57% |
+
+The sign is not reversed, but the economic and statistical magnitude is too
+small to support the OU mechanism in this pilot. The near-daily unit-gross
+reallocation also confirms that the raw policy is far too unstable to map
+directly into a cash-equity index-enhancement portfolio. The Agent therefore
+rejected parameter optimization and holdout access.
+
+The next research gate is an audit of residual construction and continuity:
+
+1. quantify residual missingness and effective cross-section through time;
+2. test whether monthly PCA refits create discontinuities inside 30-day OU
+   histories;
+3. verify factor loading and next-day residual timing against a small manual
+   fixture;
+4. only if that audit passes, define a pre-registered slower mapping experiment
+   on the existing development/validation sample.
+
 ### Reproduce
 
 ```bash
@@ -113,4 +146,5 @@ pip install -r ashare_stat_arb/requirements.txt
 python -m ashare_stat_arb.download_baostock --start 2018-01-01 --end 2022-12-31 --max-symbols 100 --output ashare_stat_arb/data/baostock_csi500_pilot100_2018_2022.npz
 python -m ashare_stat_arb.run_empirical_baseline --panel ashare_stat_arb/data/baostock_csi500_pilot100_2018_2022.npz --output ashare_stat_arb/output/baostock_pilot100_pca_ou.json
 python -m ashare_stat_arb.run_signal_diagnostics --panel ashare_stat_arb/data/baostock_csi500_pilot100_2018_2022.npz --output ashare_stat_arb/output/baostock_pilot100_signal_diagnostics.json
+python run_ashare_agent.py
 ```

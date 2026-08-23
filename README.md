@@ -7,7 +7,7 @@ statistical-arbitrage research.
 |---|---|---|
 | `paper_reproduction/` | Internship project: reproduce *Deep Learning Statistical Arbitrage* | OU and all three five-factor Fourier+FFN public-data approximations complete |
 | `ashare_stat_arb/` | Applied research: adapt the method to A-share market constraints | Free BaoStock real-data PCA-OU feasibility baseline complete; full-universe product study remains open |
-| `quant_research_agent/` | Research project: build a statistical-arbitrage research Agent | First deterministic Agent MVP retained; development currently paused |
+| `quant_research_agent/` | Research project: build a statistical-arbitrage research Agent | Deterministic MVP plus bounded A-share diagnostic workflow complete |
 
 The products share research concepts, but they do not share empirical claims.
 The U.S. paper result, A-share adaptation, and Agent evaluation must always be
@@ -102,6 +102,12 @@ Paper / note
 The Agent's synthetic pair-spread backtest is an engineering baseline, not a
 reproduction of the paper.
 
+The A-share product is connected through a deliberately narrow adapter. The
+Agent can inspect the frozen 2018-2022 diagnostic and run one fixed residual-
+space OU mechanism test. It cannot search parameters or read the sealed
+2023-2025 holdout. This keeps the research product separate from the Agent
+while still allowing the Agent to test an executable hypothesis.
+
 Run it locally:
 
 ```bash
@@ -109,6 +115,19 @@ pip install -r requirements.txt
 python main.py --paper samples/stat_arb_note.txt --no-llm --run-agent
 python -m unittest discover -s tests -v
 ```
+
+After recreating the BaoStock pilot and its direction diagnostic, run the
+A-share research loop with:
+
+```bash
+pip install -r ashare_stat_arb/requirements.txt
+python run_ashare_agent.py
+```
+
+The current Agent conclusion is intentionally negative: the fixed residual-
+space paper direction has an annualized mean of 0.45% and a Sharpe ratio of
+0.047, while residual-position turnover is 97.57% per day. The Agent therefore
+does not authorize parameter optimization or holdout access.
 
 An optional OpenAI-backed extraction path is available through `.env`; API
 keys must never be committed.

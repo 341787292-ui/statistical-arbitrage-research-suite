@@ -31,6 +31,10 @@
   returns, raw prices for execution tests, and an equal-weight pilot benchmark.
 - Leakage-safe forward RankIC and original/reversed/neutral portfolio controls
   are implemented and run on the same frozen pilot.
+- A bounded Quant Research Agent adapter freezes the panel fingerprint,
+  PCA/OU parameters, and holdout boundary before invoking A-share tools.
+- The Agent's fixed residual-space OU mechanism test is implemented, tested,
+  and run on the same pilot without parameter search.
 
 ## Deterministic engineering run
 
@@ -60,12 +64,19 @@ excess is -0.59%, versus +0.15% for the zero-signal control. Mean RankIC is
 0.0045 at one day and negative at 5, 10, and 20 days. The signal also creates
 about 7% annualized cost drag, compared with 0.11% for the neutral portfolio.
 
+## Agent diagnostic result
+
+The fixed theoretical residual-space experiment produced a 0.45% annualized
+paper-direction residual return, Sharpe 0.047, and 97.57% daily unit-gross
+turnover. The exact reversal produced -0.45% and Sharpe -0.047. The mechanism
+is therefore inconclusive rather than reversed, and parameter optimization is
+not authorized.
+
 ## Next milestone
 
-Test the OU policy directly in residual/long-short space before tuning the
-long-only portfolio. The next gate asks whether residual mean reversion exists
-before stock-space mapping and whether monthly PCA refits preserve a coherent
-30-day residual history. Only after that gate should the project tune turnover,
+Audit residual coverage, monthly PCA-refit continuity, loading estimation, and
+one-day timing before tuning the long-only portfolio. Only after that audit
+passes should the project pre-register a slower signal-to-portfolio mapping,
 run the full CSI 500 universe, or add Fourier/deep-learning signal models.
 
 The first data audit must report:
