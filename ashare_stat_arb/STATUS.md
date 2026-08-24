@@ -40,6 +40,8 @@
   refit-day residual/alpha changes.
 - A pre-registered comparison tests stitched as-of residual histories against
   histories recomputed under the decision-day PCA composition, with no search.
+- A model-free audit reports residual-return autocorrelation and symmetric
+  1/5/10/20-day reversal RankIC in development and validation periods.
 
 ## Deterministic engineering run
 
@@ -91,16 +93,19 @@ Sharpe -0.259, and 106.94% daily residual-position turnover, compared with
 +0.45%, 0.047, and 97.57% for the stitched definition. Neither passes the
 frozen Sharpe gate of 0.5.
 
+The model-free audit finds a narrower result. One-day development/validation
+RankIC is 0.0174/0.0283 and five-day RankIC is 0.0338/0.0210. Both pass the
+cross-sectional consistency gate. Ten- and twenty-day validation RankIC falls
+to 0.0045 and 0.0068, and raw pooled magnitude correlations are negative at
+every horizon. Broad residual mean reversion therefore remains unsupported.
+
 ## Next milestone
 
-Close OU parameter tuning on this pilot. If research continues, pre-register a
-model-free residual predictability audit covering lagged autocorrelation,
-reversal horizon, cross-sectional stability, and subperiod consistency. This
-audit must not choose OU thresholds, train Fourier/neural models, or access the
-2023-2025 holdout.
-
-Only evidence of stable residual predictability should justify a broader
-universe run or a fixed Fourier/deep-learning signal experiment.
+Keep OU parameter tuning and learned time-series models closed. Pre-register
+one continuous cross-sectional residual-rank mapping using the 1/5-day evidence
+and pass it through the existing long-only optimizer, T+1 execution, turnover,
+and cost model. This is a localization experiment, not a paper reproduction.
+The 2023-2025 holdout remains sealed.
 
 The first data audit must report:
 

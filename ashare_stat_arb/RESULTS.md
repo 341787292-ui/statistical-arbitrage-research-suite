@@ -173,9 +173,33 @@ pre-registered residual-mechanism Sharpe gate of 0.5. Monthly stitching is
 therefore rejected as the explanation for the weak OU result.
 
 The OU tuning branch is closed for this 100-name free-data pilot. The next
-research gate, if pursued, is a model-free residual predictability audit that
-describes autocorrelation, reversal horizon, and cross-sectional stability
-without selecting OU thresholds or opening the 2023-2025 holdout.
+research gate is a model-free residual predictability audit that describes
+autocorrelation, reversal horizon, and cross-sectional stability without
+selecting OU thresholds or opening the 2023-2025 holdout.
+
+## Model-free residual predictability audit
+
+The audit uses the reverse of each trailing cumulative residual as a ranking
+score and compares it with the next equal-length cumulative residual. It does
+not construct positions or choose a trading threshold.
+
+| Horizon | Development RankIC | Validation RankIC | Validation positive days | Validation raw pooled correlation |
+|---:|---:|---:|---:|---:|
+| 1 day | 0.0174 | 0.0283 | 55.94% | -0.0232 |
+| 5 days | 0.0338 | 0.0210 | 57.75% | -0.0034 |
+| 10 days | 0.0359 | 0.0045 | 51.02% | -0.0115 |
+| 20 days | 0.0482 | 0.0068 | 48.78% | -0.0039 |
+
+The pre-registered broad reversal gate fails because no horizon has positive
+raw pooled magnitude correlation in both periods. A narrower cross-sectional
+gate passes at 1 and 5 days: mean RankIC exceeds 0.015 and positive-IC share
+exceeds 50% in both periods. Ten- and twenty-day RankIC decays in validation.
+
+This is evidence for a short-horizon cross-sectional ranking effect, not for
+the paper's OU time-series implementation and not yet for an investable alpha.
+The next allowed experiment is one pre-registered continuous residual-rank
+mapping under the existing A-share optimizer and execution engine. Fourier and
+neural signal models remain unauthorized.
 
 ### Reproduce
 
@@ -186,5 +210,6 @@ python -m ashare_stat_arb.run_empirical_baseline --panel ashare_stat_arb/data/ba
 python -m ashare_stat_arb.run_signal_diagnostics --panel ashare_stat_arb/data/baostock_csi500_pilot100_2018_2022.npz --output ashare_stat_arb/output/baostock_pilot100_signal_diagnostics.json
 python -m ashare_stat_arb.run_residual_audit
 python -m ashare_stat_arb.run_residual_comparison
+python -m ashare_stat_arb.run_residual_predictability
 python run_ashare_agent.py
 ```

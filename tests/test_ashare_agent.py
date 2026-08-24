@@ -163,6 +163,36 @@ class FakeAshareTools:
                     "stitched_asof_gate_passed": False,
                 },
             }
+        if name == "audit_ashare_residual_predictability":
+            return {
+                "audit": {
+                    "cross_sectional_stable_horizons": [1, 5],
+                    "stable_horizons": [],
+                    "reversal_horizons": [
+                        {
+                            "horizon": horizon,
+                            "development": {"mean_rank_ic": development},
+                            "validation": {
+                                "mean_rank_ic": validation,
+                                "positive_rank_ic_share": positive,
+                                "pooled_correlation": -0.01,
+                            },
+                        }
+                        for horizon, development, validation, positive in (
+                            (1, 0.02, 0.03, 0.56),
+                            (5, 0.03, 0.02, 0.58),
+                            (10, 0.03, 0.00, 0.51),
+                            (20, 0.04, 0.01, 0.49),
+                        )
+                    ],
+                },
+                "assessment": {
+                    "short_horizon_cross_sectional_reversal_supported": True,
+                    "broad_reversal_supported": False,
+                    "long_horizon_validation_decay": True,
+                    "learned_time_series_model_authorized": False,
+                },
+            }
         raise KeyError(name)
 
 
@@ -220,6 +250,7 @@ class AshareAgentTests(unittest.TestCase):
             self.assertIn("quant_execution", phases)
             self.assertIn("continuity_audit", phases)
             self.assertIn("residual_definition_comparison", phases)
+            self.assertIn("residual_predictability_audit", phases)
             self.assertIn("reflection", phases)
             self.assertEqual(
                 result.hypotheses[1]["status_after_new_experiment"],
@@ -233,7 +264,18 @@ class AshareAgentTests(unittest.TestCase):
                 result.hypotheses[4]["status_after_new_experiment"],
                 "rejected",
             )
+            self.assertEqual(
+                result.hypotheses[5]["status_after_new_experiment"],
+                "supported",
+            )
+            self.assertEqual(
+                result.hypotheses[6]["status_after_new_experiment"],
+                "rejected",
+            )
             self.assertFalse(result.final_assessment["parameter_search_authorized"])
+            self.assertFalse(
+                result.final_assessment["learned_time_series_model_authorized"]
+            )
             self.assertFalse(result.final_assessment["holdout_accessed"])
             self.assertIn("A-Share Quant Research Agent Report", result.report_markdown)
 

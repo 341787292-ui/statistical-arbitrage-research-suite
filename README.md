@@ -6,8 +6,8 @@ statistical-arbitrage research.
 | Product | Purpose | Current status |
 |---|---|---|
 | `paper_reproduction/` | Internship project: reproduce *Deep Learning Statistical Arbitrage* | OU and all three five-factor Fourier+FFN public-data approximations complete |
-| `ashare_stat_arb/` | Applied research: adapt the method to A-share market constraints | Free BaoStock PCA-OU baseline and fixed residual-definition comparison complete; full-universe study remains open |
-| `quant_research_agent/` | Research project: build a statistical-arbitrage research Agent | Deterministic MVP plus bounded A-share mechanism-validation workflow complete |
+| `ashare_stat_arb/` | Applied research: test whether the paper's residual methodology can become A-share index-enhancement alpha | OU branch rejected on the free pilot; short-horizon cross-sectional residual ranking remains open |
+| `quant_research_agent/` | Research project: build a statistical-arbitrage research Agent | Bounded evidence review, hypothesis testing, stop/go decisions, and audit reports are runnable |
 
 The products share research concepts, but they do not share empirical claims.
 The U.S. paper result, A-share adaptation, and Agent evaluation must always be
@@ -48,6 +48,12 @@ python -m unittest discover -s paper_reproduction/tests -v
 
 `ashare_stat_arb/` studies how the paper's residual mean-reversion mechanism
 changes under A-share execution constraints.
+
+The empirical objective is not to preserve the paper's OU rule at all costs.
+It is to determine which part of the residual methodology survives in a
+cash-executable A-share index-enhancement workflow. The current evidence
+rejects the fixed OU time-series branch but leaves a narrower 1/5-day cross-
+sectional residual-ranking hypothesis open.
 
 The current runnable product supports:
 
@@ -133,7 +139,11 @@ does not authorize parameter optimization or holdout access. All 881 usable
 larger than ordinary days. Recomputing each history under the current PCA
 composition worsens annualized residual return to -2.31% and Sharpe to -0.259.
 The Agent therefore rejects residual stitching as the explanation and closes
-OU tuning on this pilot.
+OU tuning on this pilot. A model-free audit subsequently finds development /
+validation RankIC of 0.0174 / 0.0283 at one day and 0.0338 / 0.0210 at five
+days. Raw pooled correlations remain negative, so the Agent permits only a
+simple cross-sectional mapping experiment and does not authorize a Fourier or
+neural time-series model.
 
 An optional OpenAI-backed extraction path is available through `.env`; API
 keys must never be committed.

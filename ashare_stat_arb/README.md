@@ -7,10 +7,10 @@ reproduction baseline.
 
 ## Research question
 
-Can the paper's residual signal add net excess return to a cash-executable
-CSI 500 index-enhancement portfolio after point-in-time membership, T+1,
-price limits, suspensions, liquidity, costs, and benchmark-relative risk are
-modeled?
+Which parts of the paper's residual methodology retain stable predictive value
+and can add net excess return to a cash-executable CSI 500 index-enhancement
+portfolio after point-in-time membership, T+1, price limits, suspensions,
+liquidity, costs, and benchmark-relative risk are modeled?
 
 ## Two experiment tracks
 
@@ -81,6 +81,7 @@ python -m ashare_stat_arb.run_empirical_baseline --panel ashare_stat_arb/data/ba
 python -m ashare_stat_arb.run_signal_diagnostics --panel ashare_stat_arb/data/baostock_csi500_pilot100_2018_2022.npz --output ashare_stat_arb/output/baostock_pilot100_signal_diagnostics.json
 python -m ashare_stat_arb.run_residual_audit
 python -m ashare_stat_arb.run_residual_comparison
+python -m ashare_stat_arb.run_residual_predictability
 python run_ashare_agent.py
 ```
 
@@ -102,11 +103,19 @@ PCA model versions appear inside each 30-day OU history. The fixed comparison
 then contrasts the stitched as-of history with a history recomputed under the
 current decision-day composition matrix. The final command lets
 `quant_research_agent` consume this evidence through an explicit adapter and
-execute the same bounded workflow. The adapter rejects changed data
+execute the same bounded workflow. The model-free command separately measures
+lag autocorrelation and cross-sectional residual reversal at 1, 5, 10, and 20
+days without defining a trading strategy. The adapter rejects changed data
 fingerprints, panels containing the sealed 2023-2025 holdout, unknown tools,
 and parameter-search requests. Agent reports are generated locally under
 `reports/` and are not treated as A-share product results until the relevant
 evidence is summarized here.
+
+The current evidence closes the OU parameter-tuning branch. It does not close
+the broader A-share research product: 1- and 5-day cross-sectional residual
+RankIC survives both research periods, while raw pooled magnitude correlations
+and longer horizons do not. A learned time-series model is therefore not yet
+authorized.
 
 Fee rates and market rules are experiment inputs rather than permanent code
 defaults. Every empirical run must record their effective dates.

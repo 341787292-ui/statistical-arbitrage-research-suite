@@ -11,6 +11,7 @@ from ashare_stat_arb.config import DEFAULT_CONFIG
 from ashare_stat_arb.data_pipeline import load_panel
 from ashare_stat_arb.residual_audit import audit_residual_continuity
 from ashare_stat_arb.residual_comparison import compare_residual_definitions
+from ashare_stat_arb.residual_predictability import audit_residual_predictability
 from ashare_stat_arb.residual_diagnostics import (
     evaluate_residual_positions,
     ou_residual_positions,
@@ -91,6 +92,7 @@ class AshareResearchTools:
             "run_fixed_residual_ou_mechanism_test",
             "audit_ashare_residual_continuity",
             "compare_ashare_residual_definitions",
+            "audit_ashare_residual_predictability",
         )
 
     def invoke(self, name: str) -> dict[str, Any]:
@@ -102,6 +104,8 @@ class AshareResearchTools:
             return self.audit_residual_continuity()
         if name == "compare_ashare_residual_definitions":
             return self.compare_residual_definitions()
+        if name == "audit_ashare_residual_predictability":
+            return self.audit_residual_predictability()
         raise KeyError(f"A-share tool '{name}' is not allowed. Available: {self.names}")
 
     def inspect_direction_diagnostic(self) -> dict[str, Any]:
@@ -259,6 +263,48 @@ class AshareResearchTools:
                 "stitched_asof_gate_passed": (
                     comparison.stitched_asof.annualized_sharpe
                     >= comparison.mechanism_sharpe_gate
+                ),
+            },
+        }
+
+    def audit_residual_predictability(self) -> dict[str, Any]:
+        panel, signal = self._panel_and_signal()
+        config = DEFAULT_CONFIG
+        audit = audit_residual_predictability(
+            signal.residual_returns,
+            panel.dates,
+            panel.member,
+            horizons=(1, 5, 10, 20),
+            development_start=config.periods.development_start,
+            development_end=config.periods.development_end,
+            validation_start=config.periods.validation_start,
+            validation_end=config.periods.validation_end,
+            minimum_rank_ic=config.admission.minimum_rank_ic,
+            minimum_positive_share=0.50,
+            minimum_period_days=60,
+            required_stable_horizons=2,
+        )
+        result = audit.to_dict()
+        validation_by_horizon = {
+            item.horizon: item.validation.mean_rank_ic
+            for item in audit.reversal_horizons
+        }
+        return {
+            "experiment": "fixed_model_free_residual_predictability_audit",
+            "scope": "descriptive diagnostic; no trading rule, search, or holdout",
+            "audit": result,
+            "assessment": {
+                "short_horizon_cross_sectional_reversal_supported": (
+                    audit.cross_sectional_reversal_evidence_passed
+                ),
+                "broad_reversal_supported": audit.broad_reversal_evidence_passed,
+                "long_horizon_validation_decay": all(
+                    validation_by_horizon.get(horizon, 0.0)
+                    < audit.minimum_rank_ic
+                    for horizon in (10, 20)
+                ),
+                "learned_time_series_model_authorized": (
+                    audit.broad_reversal_evidence_passed
                 ),
             },
         }

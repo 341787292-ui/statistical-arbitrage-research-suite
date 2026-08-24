@@ -10,10 +10,11 @@ ashare_stat_arb panel + direction diagnostic
   -> fingerprint and holdout contract
   -> bounded A-share tool registry
   -> evidence review
-  -> four competing hypotheses
+  -> seven competing hypotheses
   -> one fixed residual-space experiment
   -> residual coverage and PCA-refit continuity audit
   -> one pre-registered residual-definition comparison
+  -> model-free residual predictability audit
   -> reflected Agent report
 ```
 
@@ -27,6 +28,7 @@ A-share product's research contract.
 - `run_fixed_residual_ou_mechanism_test`
 - `audit_ashare_residual_continuity`
 - `compare_ashare_residual_definitions`
+- `audit_ashare_residual_predictability`
 
 Any other tool name is rejected. The experiment contract also records the
 panel fingerprint and the fixed PCA/OU settings.
@@ -45,15 +47,18 @@ On the free 2018-2022 BaoStock pilot, the Agent found:
 - recomputing the 30-day history under the current PCA composition worsens
   annualized residual return from 0.45% to -2.31% and Sharpe from 0.047 to
   -0.259;
+- 1/5-day cross-sectional residual RankIC survives development and validation,
+  while longer horizons and raw pooled correlations do not;
 - parameter search authorized: no;
+- learned time-series model authorized: no;
 - sealed holdout accessed: no.
 
 This is a useful negative result. The Agent completed an evidence-to-hypothesis-
 to-experiment-to-reflection loop and stopped the project from tuning an
-unvalidated mechanism. The comparison rejects monthly residual stitching as
-the explanation, so the Agent closes OU tuning on this pilot. Its next allowed
-step is a model-free residual predictability audit, not a parameter search or
-holdout run.
+unvalidated mechanism. It now distinguishes the rejected OU time-series
+mechanism from a narrower short-horizon cross-sectional ranking effect. Its
+next allowed step is a simple executable residual-rank mapping, not parameter
+search, a learned time-series model, or a holdout run.
 
 ## Run
 

@@ -20,6 +20,7 @@ class AshareAgentResult:
     experiment_result: dict[str, Any]
     audit_result: dict[str, Any]
     comparison_result: dict[str, Any]
+    predictability_result: dict[str, Any]
     final_assessment: dict[str, Any]
     trace: list[dict[str, Any]] = field(default_factory=list)
     report_markdown: str = ""
@@ -107,11 +108,23 @@ def run_ashare_diagnostic_agent(
             "status_before_new_experiment": "unresolved",
             "evidence": "Requires the pre-registered residual-definition comparison.",
         },
+        {
+            "id": "H6",
+            "claim": "Stable short-horizon cross-sectional residual reversal exists.",
+            "status_before_new_experiment": "unresolved",
+            "evidence": "Requires model-free development/validation RankIC evidence.",
+        },
+        {
+            "id": "H7",
+            "claim": "Residual reversal is broad enough to justify a learned time-series model.",
+            "status_before_new_experiment": "unresolved",
+            "evidence": "Requires cross-sectional and pooled evidence at multiple horizons.",
+        },
     ]
     record(
         "hypothesis_generation",
         "Form mutually distinguishable explanations",
-        "Created sign, residual-mechanism, turnover, continuity, and definition hypotheses.",
+        "Created mechanism, implementation, continuity, and predictability hypotheses.",
     )
 
     experiment = toolset.invoke("run_fixed_residual_ou_mechanism_test")
@@ -164,6 +177,31 @@ def run_ashare_diagnostic_agent(
         ),
     )
 
+    predictability_result = toolset.invoke("audit_ashare_residual_predictability")
+    predictability = predictability_result["audit"]
+    predictability_assessment = predictability_result["assessment"]
+    hypotheses[5]["status_after_new_experiment"] = (
+        "supported"
+        if predictability_assessment[
+            "short_horizon_cross_sectional_reversal_supported"
+        ]
+        else "rejected"
+    )
+    hypotheses[6]["status_after_new_experiment"] = (
+        "supported"
+        if predictability_assessment["broad_reversal_supported"]
+        else "rejected"
+    )
+    record(
+        "residual_predictability_audit",
+        "Audit model-free residual reversal across horizons and periods",
+        (
+            "Cross-sectional stable horizons="
+            f"{predictability['cross_sectional_stable_horizons']}; "
+            f"broad stable horizons={predictability['stable_horizons']}."
+        ),
+    )
+
     if (
         mechanism["paper_direction_sharpe_above_half"]
         or comparison_assessment["current_composition_rescues_mechanism"]
@@ -213,6 +251,34 @@ def run_ashare_diagnostic_agent(
     else:
         verdict = "The fixed residual test is inconclusive and does not justify optimization."
         next_action = "Audit residual coverage and construction before further experiments."
+
+    if (
+        predictability_assessment["short_horizon_cross_sectional_reversal_supported"]
+        and not predictability_assessment["broad_reversal_supported"]
+    ):
+        verdict = (
+            "The OU time-series mechanism is not supported, but 1- and 5-day "
+            "cross-sectional residual RankIC survives both research periods. Raw pooled "
+            "correlations disagree, so this is a narrow ranking effect, not broad mean reversion."
+        )
+        next_action = (
+            "Keep OU and learned models closed; pre-register one continuous "
+            "cross-sectional residual-rank mapping under A-share execution constraints."
+        )
+    elif predictability_assessment["broad_reversal_supported"]:
+        verdict = (
+            "Model-free residual reversal is stable across multiple horizons and evidence "
+            "types, although the fixed OU implementation remains inadequate."
+        )
+        next_action = (
+            "Pre-register one fixed learned signal specification without parameter search."
+        )
+    elif h2_status == "not_supported_in_current_pilot":
+        verdict = (
+            "Neither the fixed OU mechanism nor the model-free residual audit establishes "
+            "stable predictability on this pilot."
+        )
+        next_action = "Stop the residual-signal branch and revisit data or research scope."
     final = {
         "verdict": verdict,
         "confidence": (
@@ -222,10 +288,14 @@ def run_ashare_diagnostic_agent(
         ),
         "next_action": next_action,
         "parameter_search_authorized": False,
+        "learned_time_series_model_authorized": predictability_assessment[
+            "learned_time_series_model_authorized"
+        ],
         "holdout_accessed": False,
         "limitations": [
             "The free pilot uses 100 point-in-time sampled constituents and an equal-weight benchmark.",
             "The residual experiment is theoretical and ignores cash-equity execution constraints.",
+            "Cross-sectional RankIC and raw pooled magnitude correlations disagree.",
             "No 2023-2025 holdout observation was used.",
         ],
     }
@@ -238,6 +308,7 @@ def run_ashare_diagnostic_agent(
         experiment,
         audit_result,
         comparison_result,
+        predictability_result,
         final,
         trace,
     )
@@ -248,6 +319,7 @@ def run_ashare_diagnostic_agent(
         experiment_result=experiment,
         audit_result=audit_result,
         comparison_result=comparison_result,
+        predictability_result=predictability_result,
         final_assessment=final,
         trace=trace,
         report_markdown=report,
@@ -261,6 +333,7 @@ def _render_report(
     experiment: dict[str, Any],
     audit_result: dict[str, Any],
     comparison_result: dict[str, Any],
+    predictability_result: dict[str, Any],
     final: dict[str, Any],
     trace: list[dict[str, Any]],
 ) -> str:
@@ -303,6 +376,7 @@ def _render_report(
         )
     audit = audit_result["audit"]
     comparison = comparison_result["comparison"]
+    predictability = predictability_result["audit"]
     lines.extend(
         [
             "",
@@ -332,10 +406,34 @@ def _render_report(
                 f"{comparison['current_composition']['average_daily_turnover']:.2%} |"
             ),
             "",
+            "## Model-Free Residual Predictability",
+            "| Horizon | Development RankIC | Validation RankIC | "
+            "Validation positive days | Raw pooled correlation |",
+            "| ---: | ---: | ---: | ---: | ---: |",
+            *[
+                (
+                    f"| {item['horizon']} | "
+                    f"{item['development']['mean_rank_ic']:.4f} | "
+                    f"{item['validation']['mean_rank_ic']:.4f} | "
+                    f"{item['validation']['positive_rank_ic_share']:.2%} | "
+                    f"{item['validation']['pooled_correlation']:.4f} |"
+                )
+                for item in predictability["reversal_horizons"]
+            ],
+            (
+                "- Cross-sectional stable horizons: "
+                f"{predictability['cross_sectional_stable_horizons']}"
+            ),
+            f"- Broad stable horizons: {predictability['stable_horizons']}",
+            "",
             "## Final Assessment",
             f"- Verdict: {final['verdict']}",
             f"- Confidence: {final['confidence']}",
             f"- Parameter search authorized: {str(final['parameter_search_authorized']).lower()}",
+            (
+                "- Learned time-series model authorized: "
+                f"{str(final['learned_time_series_model_authorized']).lower()}"
+            ),
             f"- Next action: {final['next_action']}",
             "",
             "## Limitations",
