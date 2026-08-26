@@ -46,6 +46,10 @@
   mapped through the unchanged daily long-only optimizer and A-share execution
   model. It fails the frozen net-performance and robustness gates, so the
   holdout remains sealed.
+- The separately registered Phase 2 mapping rebalances every five sessions and
+  applies a 5% discretionary turnover cap plus a cost-based penalty. It reduces
+  annualized cost drag from 9.48% to 1.07%, but gross excess falls from 2.29%
+  to 0.30%. Net excess remains negative, so the five-session branch is closed.
 
 ## Deterministic engineering run
 
@@ -120,11 +124,12 @@ correction. The 2023-2025 holdout remains sealed.
 
 ## Next milestone
 
-Finish the method migration report with the negative admission decision and
-the data limitations. Do not tune OU, replace the rank transform, slow the
-rebalance, or open the holdout inside this experiment. A future full-universe
-study with official point-in-time benchmark weights and explicit industry and
-style controls must be registered as a separate research contract.
+Baseline v1 and the Phase 2 five-session mapping are both closed negative
+results. Do not search alternative rebalance intervals. The next research
+question, if separately registered, must preserve daily responsiveness while
+reducing unnecessary trades through a stateful entry/exit buffer. No further
+mapping experiment may be tried on 2018-2022 after that single buffered design.
+Do not open the 2023-2025 holdout.
 
 The first data audit must report:
 

@@ -146,5 +146,13 @@ The following components must be A-share-specific:
 
 See `RESEARCH_SPEC.md` for the empirical contract, `RESULTS.md` for the first
 free-data result, `BASELINE_V1_FREEZE.md` for the immutable first migration
-decision, `FREE_DATA_AUDIT.md` for the data-source boundary, and `STATUS.md`
-for the current milestone.
+decision, `FREE_DATA_AUDIT.md` for the data-source boundary,
+`PHASE2_RESEARCH_CONTRACT.md` for the separately registered low-turnover
+experiment, `PHASE2_RESULTS.md` for its bounded negative result, and
+`STATUS.md` for the current milestone.
+
+Run the frozen Phase 2 bounded check:
+
+```bash
+python -m ashare_stat_arb.run_phase2_low_turnover
+```

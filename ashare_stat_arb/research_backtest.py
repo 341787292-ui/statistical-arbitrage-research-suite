@@ -19,6 +19,9 @@ class LongOnlyBacktestResult:
     executed_weights: np.ndarray
     two_way_turnover: np.ndarray
     costs: np.ndarray
+    rebalance_decisions: np.ndarray
+    mandatory_rebalance_decisions: np.ndarray
+    effective_turnover_limits: np.ndarray
     annualized_return: float
     annualized_gross_return: float
     annualized_benchmark_return: float
@@ -99,6 +102,9 @@ def run_long_only_backtest(
     covariance_window: int = 60,
     alpha_scale: float = 0.002,
     start: int | None = None,
+    decision_interval: int = 1,
+    turnover_penalty: float = 0.001,
+    force_rebalance_on_universe_change: bool = False,
 ) -> LongOnlyBacktestResult:
     """Run a daily close-decision, next-open long-only research approximation."""
 
@@ -109,6 +115,10 @@ def run_long_only_backtest(
         raise ValueError("stock_alpha must align with the daily panel.")
     if covariance_window < 20:
         raise ValueError("covariance_window must be at least 20 days.")
+    if decision_interval < 1:
+        raise ValueError("decision_interval must be at least one trading day.")
+    if turnover_penalty < 0:
+        raise ValueError("turnover_penalty must be nonnegative.")
 
     time_count, asset_count = panel.shape
     first_decision = covariance_window if start is None else max(start, covariance_window)
@@ -121,6 +131,9 @@ def run_long_only_backtest(
     benchmark_returns = np.full(time_count, np.nan, dtype=np.float64)
     turnover = np.zeros(time_count, dtype=np.float64)
     realized_costs = np.zeros(time_count, dtype=np.float64)
+    rebalance_decisions = np.zeros(time_count, dtype=bool)
+    mandatory_rebalance_decisions = np.zeros(time_count, dtype=bool)
+    effective_turnover_limits = np.zeros(time_count, dtype=np.float64)
 
     initial_benchmark = np.where(
         panel.member[first_decision], panel.benchmark_weight[first_decision], 0.0
@@ -129,6 +142,8 @@ def run_long_only_backtest(
         initial_benchmark / initial_benchmark.sum() * portfolio.target_equity_exposure
     )
     previous = initial_benchmark
+    pending_target = initial_benchmark.copy()
+    pending_mask = np.zeros(asset_count, dtype=bool)
     risk_month: str | None = None
     working_indices = np.empty(0, dtype=np.int64)
     covariance_psd = np.empty((0, 0), dtype=np.float64)
@@ -141,36 +156,70 @@ def run_long_only_backtest(
             continue
         benchmark = benchmark / benchmark.sum()
         eligible = panel.member[decision] & ~panel.is_st[decision]
-        month = str(panel.dates[decision].astype("datetime64[M]"))
-        if month != risk_month:
-            working_indices = np.flatnonzero(eligible | (previous > 1e-12))
-            covariance_psd = _psd_covariance(
-                _covariance(
-                    adjusted_returns[
-                        decision - covariance_window + 1 : decision + 1,
-                        working_indices,
-                    ]
-                )
-            )
-            risk_month = month
-        if working_indices.size == 0:
-            continue
-        result = optimize_long_only_index_enhancement(
-            alpha[decision, working_indices] * alpha_scale,
-            benchmark[working_indices],
-            previous[working_indices],
-            covariance_psd,
-            equity_exposure=portfolio.target_equity_exposure,
-            maximum_stock_weight=portfolio.maximum_stock_weight,
-            maximum_two_way_turnover=portfolio.maximum_two_way_turnover,
-            annual_tracking_error_limit=portfolio.central_tracking_error,
-            maximum_industry_deviation=portfolio.maximum_industry_deviation,
-            maximum_style_deviation=portfolio.maximum_style_deviation,
-            eligible=eligible[working_indices],
-            covariance_is_psd=True,
+        forced_exit_mass = float(previous[~eligible & (previous > 1e-8)].sum())
+        universe_changed = not np.array_equal(
+            panel.member[decision], panel.member[decision - 1]
         )
-        target = np.zeros(asset_count, dtype=np.float64)
-        target[working_indices] = result.weights
+        previous_eligible = panel.member[decision - 1] & ~panel.is_st[decision - 1]
+        eligibility_changed = not np.array_equal(eligible, previous_eligible)
+        mandatory_rebalance = force_rebalance_on_universe_change and (
+            universe_changed or eligibility_changed
+        )
+        should_rebalance = (
+            (decision - first_decision) % decision_interval == 0
+            or mandatory_rebalance
+        )
+        if should_rebalance:
+            month = str(panel.dates[decision].astype("datetime64[M]"))
+            if month != risk_month or universe_changed:
+                working_indices = np.flatnonzero(eligible | (previous > 1e-12))
+                covariance_psd = _psd_covariance(
+                    _covariance(
+                        adjusted_returns[
+                            decision - covariance_window + 1 : decision + 1,
+                            working_indices,
+                        ]
+                    )
+                )
+                risk_month = month
+            if working_indices.size == 0:
+                continue
+            effective_turnover_limit = (
+                portfolio.maximum_two_way_turnover
+                + (forced_exit_mass if force_rebalance_on_universe_change else 0.0)
+            )
+            try:
+                result = optimize_long_only_index_enhancement(
+                    alpha[decision, working_indices] * alpha_scale,
+                    benchmark[working_indices],
+                    previous[working_indices],
+                    covariance_psd,
+                    equity_exposure=portfolio.target_equity_exposure,
+                    maximum_stock_weight=portfolio.maximum_stock_weight,
+                    maximum_two_way_turnover=effective_turnover_limit,
+                    annual_tracking_error_limit=portfolio.central_tracking_error,
+                    turnover_penalty=turnover_penalty,
+                    maximum_industry_deviation=portfolio.maximum_industry_deviation,
+                    maximum_style_deviation=portfolio.maximum_style_deviation,
+                    eligible=eligible[working_indices],
+                    covariance_is_psd=True,
+                )
+            except RuntimeError as exc:
+                raise RuntimeError(
+                    "Portfolio optimization failed on decision date "
+                    f"{panel.dates[decision]} with {working_indices.size} working "
+                    f"stocks, discretionary turnover cap "
+                    f"{portfolio.maximum_two_way_turnover:.4f}, and forced exit "
+                    f"mass {forced_exit_mass:.4f}."
+                ) from exc
+            target = np.zeros(asset_count, dtype=np.float64)
+            target[working_indices] = result.weights
+            rebalance_decisions[decision] = True
+            mandatory_rebalance_decisions[decision] = mandatory_rebalance
+            effective_turnover_limits[decision] = effective_turnover_limit
+        else:
+            target = previous.copy()
+            target[pending_mask] = pending_target[pending_mask]
         target_weights[decision] = target
 
         execution_day = decision + 1
@@ -197,6 +246,8 @@ def run_long_only_backtest(
             can_buy=can_buy,
             can_sell=can_sell,
         )
+        pending_mask = np.abs(executed - target) > 1e-8
+        pending_target = target.copy()
         executed_weights[execution_day] = executed
         asset_returns = np.nan_to_num(open_returns[holding_return_day], nan=0.0)
         gross_strategy = float(executed @ asset_returns)
@@ -225,6 +276,7 @@ def run_long_only_backtest(
         if net_growth <= 0:
             raise RuntimeError("Portfolio wealth became nonpositive.")
         previous = executed * (1.0 + asset_returns) / net_growth
+        previous[np.abs(previous) < 1e-10] = 0.0
 
     active = strategy_returns - benchmark_returns
     gross_strategy_returns = strategy_returns + realized_costs
@@ -254,6 +306,9 @@ def run_long_only_backtest(
         executed_weights=executed_weights,
         two_way_turnover=turnover,
         costs=realized_costs,
+        rebalance_decisions=rebalance_decisions,
+        mandatory_rebalance_decisions=mandatory_rebalance_decisions,
+        effective_turnover_limits=effective_turnover_limits,
         annualized_return=annualized_return,
         annualized_gross_return=annualized_gross_return,
         annualized_benchmark_return=annualized_benchmark_return,

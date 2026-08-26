@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from dataclasses import replace
 
 import numpy as np
 
@@ -145,6 +146,75 @@ class EndToEndBaselineTests(unittest.TestCase):
         self.assertLessEqual(float(result.target_weights.max()), 0.015 + 1e-6)
         self.assertLessEqual(float(result.two_way_turnover.max()), 0.20 + 1e-5)
         self.assertGreater(float(result.two_way_turnover.sum()), 1e-5)
+
+    def test_fixed_interval_carries_holdings_between_rebalances(self) -> None:
+        panel = make_synthetic_csi500_panel(trading_days=120, assets=70, seed=31)
+        alpha = np.zeros(panel.shape)
+        alpha[:, :35] = 1.0
+        alpha[:, 35:] = -1.0
+        result = run_long_only_backtest(
+            panel,
+            alpha,
+            covariance_window=20,
+            start=20,
+            decision_interval=5,
+            turnover_penalty=0.00352,
+        )
+
+        decision_rows = np.flatnonzero(result.rebalance_decisions)
+        self.assertGreater(decision_rows.size, 5)
+        np.testing.assert_array_equal(np.diff(decision_rows), 5)
+        execution_rows = decision_rows + 1
+        non_execution = np.ones(panel.shape[0], dtype=bool)
+        non_execution[execution_rows] = False
+        self.assertTrue(np.all(result.costs[non_execution] == 0.0))
+        self.assertTrue(np.all(result.two_way_turnover[non_execution] == 0.0))
+
+    def test_invalid_rebalance_controls_are_rejected(self) -> None:
+        panel = make_synthetic_csi500_panel(trading_days=80, assets=70, seed=37)
+        alpha = np.zeros(panel.shape)
+        with self.assertRaises(ValueError):
+            run_long_only_backtest(
+                panel,
+                alpha,
+                covariance_window=20,
+                decision_interval=0,
+            )
+        with self.assertRaises(ValueError):
+            run_long_only_backtest(
+                panel,
+                alpha,
+                covariance_window=20,
+                turnover_penalty=-0.001,
+            )
+
+    def test_universe_exit_triggers_audited_mandatory_rebalance(self) -> None:
+        panel = make_synthetic_csi500_panel(trading_days=90, assets=80, seed=41)
+        member = np.zeros(panel.shape, dtype=bool)
+        member[:33, :70] = True
+        member[33:, 10:] = True
+        benchmark = member.astype(float)
+        benchmark /= benchmark.sum(axis=1, keepdims=True)
+        changing_panel = replace(
+            panel,
+            member=member,
+            benchmark_weight=benchmark,
+        )
+        result = run_long_only_backtest(
+            changing_panel,
+            np.zeros(panel.shape),
+            covariance_window=20,
+            start=20,
+            decision_interval=5,
+            force_rebalance_on_universe_change=True,
+        )
+
+        self.assertTrue(result.mandatory_rebalance_decisions[33])
+        self.assertGreater(result.effective_turnover_limits[33], 0.05)
+        self.assertLessEqual(
+            result.two_way_turnover[34],
+            result.effective_turnover_limits[33] + 1e-6,
+        )
 
 
 if __name__ == "__main__":
