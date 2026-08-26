@@ -230,6 +230,24 @@ pilot, not proof that every possible A-share residual strategy is impossible.
 The holdout remains sealed and no post-result rebalance-frequency search is
 permitted.
 
+## Portfolio-mapping follow-up
+
+Two separately pre-registered mappings tested whether the weak daily gross
+effect could survive lower turnover without changing the underlying five-day
+residual score.
+
+| Mapping | Gross excess | Cost drag | Net excess | Net IR |
+|---|---:|---:|---:|---:|
+| Daily continuous rank | 2.29% | 9.48% | -7.20% | -1.96 |
+| Five-session mapping | 0.30% | 1.07% | -0.77% | -0.27 |
+| Daily 20/40/60/80 buffer | 0.59% | 3.70% | -3.11% | -1.24 |
+
+The five-session mapping successfully reduced costs but removed most of the
+gross effect. The daily buffer reacted faster but still traded too much and
+was weak in 2020-2022. The signal-to-portfolio mapping branch is therefore
+closed on the observed 2018-2022 pilot. See `PHASE2_RESULTS.md`,
+`PHASE3_RESULTS.md`, and `MIGRATION_CONCLUSION.md`.
+
 ### Reproduce
 
 ```bash

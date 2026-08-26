@@ -149,10 +149,13 @@ free-data result, `BASELINE_V1_FREEZE.md` for the immutable first migration
 decision, `FREE_DATA_AUDIT.md` for the data-source boundary,
 `PHASE2_RESEARCH_CONTRACT.md` for the separately registered low-turnover
 experiment, `PHASE2_RESULTS.md` for its bounded negative result, and
-`STATUS.md` for the current milestone.
+`PHASE3_RESEARCH_CONTRACT.md` and `PHASE3_RESULTS.md` for the final buffered
+test, `MIGRATION_CONCLUSION.md` for the bounded conclusion, and `STATUS.md` for
+the current milestone.
 
 Run the frozen Phase 2 bounded check:
 
 ```bash
 python -m ashare_stat_arb.run_phase2_low_turnover
+python -m ashare_stat_arb.run_phase3_buffered
 ```

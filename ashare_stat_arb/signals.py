@@ -177,6 +177,57 @@ def cross_sectional_residual_rank_alpha(
     return alpha
 
 
+def buffered_residual_rank_alpha(
+    residual_returns: np.ndarray,
+    member: np.ndarray,
+    *,
+    horizon: int = 5,
+    positive_entry: float = 0.80,
+    positive_exit: float = 0.60,
+    negative_entry: float = 0.20,
+    negative_exit: float = 0.40,
+    minimum_cross_section: int = 20,
+) -> np.ndarray:
+    """Create a daily responsive rank signal with symmetric state buffers."""
+
+    residuals = np.asarray(residual_returns, dtype=np.float64)
+    membership = np.asarray(member, dtype=bool)
+    if residuals.ndim != 2 or membership.shape != residuals.shape:
+        raise ValueError("residual_returns and member must align as (time, assets).")
+    if horizon < 1:
+        raise ValueError("horizon must be positive.")
+    if minimum_cross_section < 2:
+        raise ValueError("minimum_cross_section must be at least two.")
+    if not (0.0 < negative_entry < negative_exit < positive_exit < positive_entry < 1.0):
+        raise ValueError("buffer thresholds must be strictly ordered and inside (0, 1).")
+
+    alpha = np.zeros_like(residuals)
+    state = np.zeros(residuals.shape[1], dtype=np.int8)
+    for t in range(horizon - 1, residuals.shape[0]):
+        history = residuals[t - horizon + 1 : t + 1]
+        valid = membership[t] & np.all(np.isfinite(history), axis=0)
+        count = int(valid.sum())
+        state[~valid] = 0
+        if count < minimum_cross_section:
+            continue
+
+        reversal_score = -history[:, valid].sum(axis=0)
+        percentiles = (_average_ranks(reversal_score) - 0.5) / count
+        current = state[valid].copy()
+        current[(current == 1) & (percentiles < positive_exit)] = 0
+        current[(current == -1) & (percentiles > negative_exit)] = 0
+        current[(current == 0) & (percentiles >= positive_entry)] = 1
+        current[(current == 0) & (percentiles <= negative_entry)] = -1
+        state[valid] = current
+
+        values = state[valid].astype(np.float64)
+        values -= values.mean()
+        scale = float(values.std(ddof=0))
+        if scale > np.finfo(np.float64).eps:
+            alpha[t, valid] = values / scale
+    return alpha
+
+
 def _average_ranks(values: np.ndarray) -> np.ndarray:
     data = np.asarray(values, dtype=np.float64)
     order = np.argsort(data, kind="mergesort")

@@ -50,6 +50,9 @@
   applies a 5% discretionary turnover cap plus a cost-based penalty. It reduces
   annualized cost drag from 9.48% to 1.07%, but gross excess falls from 2.29%
   to 0.30%. Net excess remains negative, so the five-session branch is closed.
+- The final pre-registered Phase 3 daily buffer retains 0.59% gross excess but
+  incurs 3.70% annualized cost drag and -3.11% net excess. The mapping branch
+  is closed on 2018-2022; no further threshold or cadence search is permitted.
 
 ## Deterministic engineering run
 
@@ -124,12 +127,11 @@ correction. The 2023-2025 holdout remains sealed.
 
 ## Next milestone
 
-Baseline v1 and the Phase 2 five-session mapping are both closed negative
-results. Do not search alternative rebalance intervals. The next research
-question, if separately registered, must preserve daily responsiveness while
-reducing unnecessary trades through a stateful entry/exit buffer. No further
-mapping experiment may be tried on 2018-2022 after that single buffered design.
-Do not open the 2023-2025 holdout.
+Baseline v1, Phase 2, and Phase 3 are closed negative results. Finish the method
+migration report using `MIGRATION_CONCLUSION.md`. Do not search alternative
+thresholds, alpha scales, or rebalance intervals, and do not open the 2023-2025
+holdout. A future experiment requires a materially new research question and a
+new evaluation contract.
 
 The first data audit must report:
 
