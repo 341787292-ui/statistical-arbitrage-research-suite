@@ -82,6 +82,7 @@ python -m ashare_stat_arb.run_signal_diagnostics --panel ashare_stat_arb/data/ba
 python -m ashare_stat_arb.run_residual_audit
 python -m ashare_stat_arb.run_residual_comparison
 python -m ashare_stat_arb.run_residual_predictability
+python -m ashare_stat_arb.run_residual_rank_portfolio
 python run_ashare_agent.py
 ```
 
@@ -112,10 +113,14 @@ and parameter-search requests. Agent reports are generated locally under
 evidence is summarized here.
 
 The current evidence closes the OU parameter-tuning branch. It does not close
-the broader A-share research product: 1- and 5-day cross-sectional residual
+the broader A-share research question: 1- and 5-day cross-sectional residual
 RankIC survives both research periods, while raw pooled magnitude correlations
-and longer horizons do not. A learned time-series model is therefore not yet
-authorized.
+and longer horizons do not. The one pre-registered five-day rank mapping has
+now also failed the executable portfolio gates: overall gross excess is 2.29%,
+but 9.48% annualized cost drag produces -7.20% net excess and -1.96 net IR.
+The result is a valid negative method-migration finding for this free 100-name
+pilot. The holdout remains sealed, and neither rebalance-frequency search nor a
+learned time-series model is authorized inside this experiment.
 
 Fee rates and market rules are experiment inputs rather than permanent code
 defaults. Every empirical run must record their effective dates.
@@ -140,4 +145,6 @@ The following components must be A-share-specific:
 - suspensions, price limits, lot sizes, and effective-dated fees.
 
 See `RESEARCH_SPEC.md` for the empirical contract, `RESULTS.md` for the first
-free-data result, and `STATUS.md` for the current milestone.
+free-data result, `BASELINE_V1_FREEZE.md` for the immutable first migration
+decision, `FREE_DATA_AUDIT.md` for the data-source boundary, and `STATUS.md`
+for the current milestone.

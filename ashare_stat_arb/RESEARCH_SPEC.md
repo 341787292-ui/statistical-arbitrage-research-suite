@@ -16,6 +16,16 @@ Two outputs are always reported separately:
 The research target is net excess return and information ratio at an auditable
 risk level. A high standalone Sharpe is not an admission criterion by itself.
 
+The frozen internship deliverable is a **method migration report**, not a
+production strategy or a promise that the method can be migrated. A well
+supported negative result is a valid completion. The first formal benchmark is
+CSI 500 and must not be changed after results are observed.
+
+No company factor library, private portfolio data, or internal production
+parameters are available or required. Public-data experiments must state which
+industry/style controls are absent; they cannot be described as ready for live
+integration.
+
 ## Point-in-time universe and periods
 
 - Benchmark and universe: historical point-in-time constituents of CSI 500
@@ -103,6 +113,31 @@ The public multifactor benchmark is built only after the residual signal passes
 its first admission gate. It includes value, quality, 12-1 momentum, five-day
 reversal, 60-day low volatility, liquidity, and size-as-risk controls.
 
+### Frozen residual-rank migration experiment
+
+The only authorized experiment after the failed OU branch is a five-day
+cross-sectional residual-rank signal:
+
+1. sum each stock's available PCA residual returns over the trailing five
+   sessions;
+2. reverse the sign so a lower cumulative residual receives a higher score;
+3. convert the score to a cross-sectional percentile rank and center/scale the
+   ranks to unit variance without using residual magnitude;
+4. update that score and the target portfolio daily, then map it through the
+   existing long-only optimizer and next-open A-share execution model;
+5. keep PCA settings, alpha scale, rebalance timing, benchmark, costs, risk
+   limits, and the 2023-2025 holdout unchanged.
+
+Monthly in this contract refers to point-in-time universe snapshots and PCA
+refits. The frozen portfolio experiment updates its five-day signal and target
+weights daily. A slower rebalance is a different experiment and cannot be
+introduced after observing this result.
+
+The free pilot has no licensed industry or style exposure matrix. Its optimizer
+therefore enforces long-only, stock-weight, turnover, covariance tracking-error,
+cash, and execution constraints, but not explicit industry/style neutrality.
+That omission is a stated data limitation, not an implementation success.
+
 ## Execution rules
 
 1. Information through day `t` close produces the decision.
@@ -145,14 +180,29 @@ Signal-level admission requires:
 
 Integrated portfolio admission requires:
 
-- net information ratio at least 1.00 and uplift over the public multifactor
-  baseline of at least 0.15;
+- positive annualized gross excess return;
+- positive annualized net excess return and net information ratio at least
+  1.00 in both development and validation;
 - IR 1.50 is strong and 2.00 is a stretch target;
 - IR at or above 3.00 triggers a leakage, leverage, and valuation audit rather
   than automatic acceptance;
 - active maximum drawdown at most 12%;
 - costs consume no more than 50% of gross alpha;
 - positive rolling 12-month excess return in at least 60% of windows.
+
+Failure of any frozen gate rejects migration for this public-data pilot and
+keeps the 2023-2025 holdout sealed. Gates cannot be relaxed after viewing the
+portfolio result.
+
+## Disclosure boundary
+
+- Public repositories and reports use generic descriptions such as
+  `CSI 500 index enhancement` and `method migration report`.
+- Detailed company product names, internal factor names, private parameters,
+  client materials, and non-public performance figures must not appear in
+  GitHub or public deliverables.
+- Company background may inform the research question, but it is not empirical
+  evidence unless a source is explicitly authorized for disclosure.
 
 ## Reproducibility labels
 

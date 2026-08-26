@@ -42,6 +42,10 @@
   histories recomputed under the decision-day PCA composition, with no search.
 - A model-free audit reports residual-return autocorrelation and symmetric
   1/5/10/20-day reversal RankIC in development and validation periods.
+- The pre-registered five-day cross-sectional residual-rank signal has been
+  mapped through the unchanged daily long-only optimizer and A-share execution
+  model. It fails the frozen net-performance and robustness gates, so the
+  holdout remains sealed.
 
 ## Deterministic engineering run
 
@@ -99,13 +103,28 @@ cross-sectional consistency gate. Ten- and twenty-day validation RankIC falls
 to 0.0045 and 0.0068, and raw pooled magnitude correlations are negative at
 every horizon. Broad residual mean reversion therefore remains unsupported.
 
+## Residual-rank migration decision
+
+The one authorized mapping used the reverse percentile rank of the trailing
+five-day PCA residual sum, updated daily. Gross excess is positive in both
+available periods, but it weakens from 3.73% in development to 1.83% in
+validation. Annualized cost drag is 9.13% and 9.59%, turning net excess to
+-5.40% and -7.76%. Net IR is -1.72 and -2.03. Overall active drawdown is
+-25.53%, costs consume 414.86% of gross alpha, and only 3.82% of rolling
+12-month windows beat the pilot benchmark.
+
+This fixed mapping is rejected for the public-data pilot. Daily target updates
+were part of the pre-registered existing engine, so changing to a slower
+schedule after viewing the result would be a new experiment rather than a
+correction. The 2023-2025 holdout remains sealed.
+
 ## Next milestone
 
-Keep OU parameter tuning and learned time-series models closed. Pre-register
-one continuous cross-sectional residual-rank mapping using the 1/5-day evidence
-and pass it through the existing long-only optimizer, T+1 execution, turnover,
-and cost model. This is a localization experiment, not a paper reproduction.
-The 2023-2025 holdout remains sealed.
+Finish the method migration report with the negative admission decision and
+the data limitations. Do not tune OU, replace the rank transform, slow the
+rebalance, or open the holdout inside this experiment. A future full-universe
+study with official point-in-time benchmark weights and explicit industry and
+style controls must be registered as a separate research contract.
 
 The first data audit must report:
 

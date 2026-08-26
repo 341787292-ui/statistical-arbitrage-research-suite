@@ -44,6 +44,8 @@ class ResearchConfigTest(unittest.TestCase):
         self.assertEqual(DEFAULT_CONFIG.portfolio.benchmark, "000905.XSHG")
         self.assertEqual(DEFAULT_CONFIG.periods.holdout_start, "2023-01-01")
         self.assertEqual(DEFAULT_CONFIG.signal.factor_counts, (0, 1, 3, 5, 8, 10, 15))
+        self.assertEqual(DEFAULT_CONFIG.universe_snapshot_frequency, "monthly")
+        self.assertEqual(DEFAULT_CONFIG.portfolio_decision_frequency, "daily")
         self.assertEqual(DEFAULT_CONFIG.portfolio.maximum_stock_weight, 0.015)
         self.assertEqual(DEFAULT_CONFIG.admission.minimum_net_information_ratio, 1.0)
 

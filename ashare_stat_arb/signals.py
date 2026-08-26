@@ -16,6 +16,13 @@ class MonthlyPCASignalResult:
     refit_dates: tuple[str, ...]
 
 
+@dataclass(frozen=True)
+class MonthlyPCAResidualResult:
+    residual_returns: np.ndarray
+    active_count: np.ndarray
+    refit_dates: tuple[str, ...]
+
+
 def fit_pca_residual_map(
     history: np.ndarray,
     eligible: np.ndarray,
@@ -70,6 +77,119 @@ def fit_pca_residual_map(
     )[0]
     phi = np.eye(indices.size) - factor_loadings.T @ directions.T @ np.diag(1.0 / vol)
     return indices, phi
+
+
+def rolling_monthly_pca_residuals(
+    excess_returns: np.ndarray,
+    dates: np.ndarray,
+    member: np.ndarray,
+    *,
+    n_factors: int = 5,
+    covariance_window: int = 252,
+    loading_window: int = 60,
+) -> MonthlyPCAResidualResult:
+    """Construct point-in-time monthly PCA residuals without a signal model."""
+
+    returns = np.asarray(excess_returns, dtype=np.float64)
+    trading_dates = np.asarray(dates, dtype="datetime64[D]")
+    membership = np.asarray(member, dtype=bool)
+    if returns.ndim != 2 or membership.shape != returns.shape:
+        raise ValueError("returns and member must align as (time, assets).")
+    if trading_dates.shape != (returns.shape[0],):
+        raise ValueError("dates must align with the time dimension.")
+    if covariance_window < loading_window:
+        raise ValueError("covariance_window must be at least loading_window.")
+    if n_factors < 0:
+        raise ValueError("n_factors must be nonnegative.")
+
+    time_count = returns.shape[0]
+    residuals = np.full_like(returns, np.nan)
+    active_count = np.zeros(time_count, dtype=np.int64)
+    refit_dates: list[str] = []
+    current_indices = np.empty(0, dtype=np.int64)
+    current_phi = np.empty((0, 0), dtype=np.float64)
+    previous_month: str | None = None
+
+    for t in range(covariance_window, time_count):
+        month = str(trading_dates[t].astype("datetime64[M]"))
+        if month != previous_month:
+            current_indices, current_phi = fit_pca_residual_map(
+                returns[t - covariance_window : t],
+                membership[t],
+                n_factors=n_factors,
+                loading_window=loading_window,
+            )
+            previous_month = month
+            refit_dates.append(str(trading_dates[t]))
+
+        if current_phi.size == 0:
+            continue
+        current_returns = returns[t, current_indices]
+        if not np.all(np.isfinite(current_returns)):
+            continue
+        residuals[t, current_indices] = current_phi @ current_returns
+        active_count[t] = current_indices.size
+
+    return MonthlyPCAResidualResult(
+        residual_returns=residuals,
+        active_count=active_count,
+        refit_dates=tuple(refit_dates),
+    )
+
+
+def cross_sectional_residual_rank_alpha(
+    residual_returns: np.ndarray,
+    member: np.ndarray,
+    *,
+    horizon: int = 5,
+    minimum_cross_section: int = 20,
+) -> np.ndarray:
+    """Map trailing residual reversal ranks to continuous stock alpha.
+
+    The score is the negative trailing cumulative residual. Cross-sectional
+    percentile ranks are centered and scaled to unit variance, preserving only
+    ordering information and discarding residual magnitude.
+    """
+
+    residuals = np.asarray(residual_returns, dtype=np.float64)
+    membership = np.asarray(member, dtype=bool)
+    if residuals.ndim != 2 or membership.shape != residuals.shape:
+        raise ValueError("residual_returns and member must align as (time, assets).")
+    if horizon < 1:
+        raise ValueError("horizon must be positive.")
+    if minimum_cross_section < 2:
+        raise ValueError("minimum_cross_section must be at least two.")
+
+    alpha = np.zeros_like(residuals)
+    for t in range(horizon - 1, residuals.shape[0]):
+        history = residuals[t - horizon + 1 : t + 1]
+        valid = membership[t] & np.all(np.isfinite(history), axis=0)
+        count = int(valid.sum())
+        if count < minimum_cross_section:
+            continue
+        reversal_score = -history[:, valid].sum(axis=0)
+        ranks = _average_ranks(reversal_score)
+        percentiles = (ranks - 0.5) / count
+        centered = percentiles - 0.5
+        scale = float(centered.std(ddof=0))
+        if scale > np.finfo(np.float64).eps:
+            alpha[t, valid] = centered / scale
+    return alpha
+
+
+def _average_ranks(values: np.ndarray) -> np.ndarray:
+    data = np.asarray(values, dtype=np.float64)
+    order = np.argsort(data, kind="mergesort")
+    sorted_values = data[order]
+    ranks = np.empty(data.size, dtype=np.float64)
+    start = 0
+    while start < data.size:
+        end = start + 1
+        while end < data.size and sorted_values[end] == sorted_values[start]:
+            end += 1
+        ranks[order[start:end]] = (start + end - 1) / 2.0 + 1.0
+        start = end
+    return ranks
 
 
 def ou_stock_alpha(

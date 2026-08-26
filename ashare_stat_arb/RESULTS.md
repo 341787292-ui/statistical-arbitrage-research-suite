@@ -201,6 +201,35 @@ The next allowed experiment is one pre-registered continuous residual-rank
 mapping under the existing A-share optimizer and execution engine. Fourier and
 neural signal models remain unauthorized.
 
+## Frozen five-day residual-rank portfolio test
+
+The final authorized pilot experiment converts the reverse rank of each
+stock's trailing five-day PCA residual sum into a centered, unit-variance
+continuous alpha. The signal and target portfolio update daily. Monthly refers
+only to point-in-time universe snapshots and PCA refits. No private factor
+library, explicit industry/style exposure matrix, or 2023-2025 holdout data is
+used.
+
+| Metric | Development | Validation | Overall |
+|---|---:|---:|---:|
+| Observations | 230 | 727 | 957 |
+| Annualized gross excess | 3.73% | 1.83% | 2.29% |
+| Gross IR | 1.19 | 0.48 | 0.62 |
+| Annualized cost drag | 9.13% | 9.59% | 9.48% |
+| Annualized net excess | -5.40% | -7.76% | -7.20% |
+| Net IR | -1.72 | -2.03 | -1.96 |
+| Maximum active drawdown | -6.40% | -21.23% | -25.53% |
+| Cost / gross alpha | 244.75% | 524.62% | 414.86% |
+| Positive rolling 12-month excess | N/A | 5.67% | 3.82% |
+
+The mapping retains a weak positive pre-cost effect in both periods, but it
+fails after execution costs and deteriorates in validation. It fails the net
+excess, net IR, active-drawdown, cost-share, and rolling-consistency gates.
+This is a valid negative method-migration result for the bounded free-data
+pilot, not proof that every possible A-share residual strategy is impossible.
+The holdout remains sealed and no post-result rebalance-frequency search is
+permitted.
+
 ### Reproduce
 
 ```bash
@@ -211,5 +240,6 @@ python -m ashare_stat_arb.run_signal_diagnostics --panel ashare_stat_arb/data/ba
 python -m ashare_stat_arb.run_residual_audit
 python -m ashare_stat_arb.run_residual_comparison
 python -m ashare_stat_arb.run_residual_predictability
+python -m ashare_stat_arb.run_residual_rank_portfolio
 python run_ashare_agent.py
 ```

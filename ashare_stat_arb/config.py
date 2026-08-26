@@ -64,8 +64,9 @@ class CostConfig:
 class AdmissionConfig:
     minimum_rank_ic: float = 0.015
     minimum_icir: float = 0.50
+    minimum_annualized_gross_excess_return: float = 0.0
+    minimum_annualized_net_excess_return: float = 0.0
     minimum_net_information_ratio: float = 1.00
-    minimum_ir_uplift: float = 0.15
     strong_information_ratio: float = 1.50
     stretch_information_ratio: float = 2.00
     audit_trigger_information_ratio: float = 3.00
@@ -77,8 +78,10 @@ class AdmissionConfig:
 @dataclass(frozen=True)
 class AshareResearchConfig:
     product_name: str = "CSI500 residual-alpha index enhancement"
+    deliverable: str = "method migration report"
     universe: str = "point-in-time CSI 500 constituents"
-    rebalance_frequency: str = "monthly"
+    universe_snapshot_frequency: str = "monthly"
+    portfolio_decision_frequency: str = "daily"
     decision_time: str = "trading-day close"
     execution_time: str = "next-trading-day open"
     periods: ResearchPeriods = field(default_factory=ResearchPeriods)
