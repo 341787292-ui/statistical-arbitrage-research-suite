@@ -32,6 +32,9 @@ implemented control changes the test result.
 | `reflexion-2023` | Shinn et al., *Reflexion*, NeurIPS 2023 | Tool feedback updates hypothesis states, limitations, and the next research decision. |
 | `external-feedback-2024` | Huang et al., *Large Language Models Cannot Self-Correct Reasoning Yet*, ICLR 2024 | A reflection cannot pass the protocol using the LLM's own unsupported critique; it needs an external tool result. |
 | `dsr-2014` | Bailey and Lopez de Prado, *The Deflated Sharpe Ratio*, Journal of Portfolio Management 2014 | The A-share workflow freezes parameters and the data fingerprint, disallows post-hoc search, and keeps the holdout sealed after failed gates. |
+| `agentproof-2026` | Xavier et al., *Agentproof: Static Verification of Agent Workflow Graphs*, arXiv 2026 | The domain verifier applies deterministic checks and emits a concrete counterexample and repair instead of asking the Agent to validate itself. |
+| `sigil-2026` | Dantanarayana et al., *SIGIL: Compiling Agent Skills into Typed Harnesses*, arXiv 2026 | StatArb-IR converts temporal research requirements into typed data, model, signal, execution, return, and selection events. |
+| `prov-o-2013` | Lebo, Sahoo, and McGuinness, *PROV-O*, W3C Recommendation 2013 | Stable identifiers and derivation links preserve provenance across experiment artifacts. |
 
 Primary sources:
 
@@ -42,6 +45,9 @@ Primary sources:
 - Reflexion: <https://proceedings.neurips.cc/paper_files/paper/2023/hash/1b44b878bb782e6954cd888628510e90-Abstract-Conference.html>
 - External-feedback limitation: <https://openreview.net/forum?id=IkmD3fKBPQ>
 - Deflated Sharpe Ratio: <https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2460551>
+- Agentproof: <https://arxiv.org/abs/2603.20356>
+- SIGIL: <https://arxiv.org/abs/2607.27309>
+- PROV-O: <https://www.w3.org/TR/prov-o/>
 
 ## 3. Protocol gates
 
@@ -73,42 +79,43 @@ The repository adapts methods from these papers. It does **not** claim that it:
 These limits are stored in `quant_research_agent.methodology.FOUNDATIONS` and
 are available in every generated methodology manifest.
 
-## 5. Why this is a defensible technical contribution
+## 5. Engineering foundation versus research contribution
 
-The research contribution is not a new foundation model. It is a domain
-protocol that combines ideas usually evaluated separately:
+The existing paper-backed protocol is useful engineering, but combining known
+methods is not by itself a defensible novelty claim. It is retained as the
+experimental control. The candidate research contribution is narrower:
 
-- evidence-grounded paper understanding;
-- tool-grounded financial numerical reasoning;
-- feedback-driven hypothesis revision;
-- explicit anti-overfitting controls for quantitative research;
-- machine-checkable provenance from paper to decision.
+- a statistical-arbitrage-specific typed experiment representation;
+- deterministic temporal and, later, execution-semantic verification;
+- concrete counterexamples and repairs for invalid research experiments;
+- a mutation benchmark that measures fault detection and repair.
 
 The correct claim is:
 
-> We designed and tested a paper-backed research protocol for a quantitative
-> research Agent. The protocol converts retrieval, tool execution, external
-> feedback, and backtest-governance principles into observable controls and
-> automated failure gates.
+> We are testing whether a statistical-arbitrage-specific verifier can reduce
+> invalid experiments and unsupported conclusions made by research Agents.
 
 The incorrect claim would be:
 
-> We invented a new RAG, ReAct, or Reflexion model.
+> Combining RAG, ReAct, tool calling, and a workflow is itself a new algorithm.
 
-## 6. Next research-grade milestone
+## 6. Current verification milestone and next threshold
 
-Protocol compliance proves that the Agent followed a disciplined process; it
-does not prove that the Agent improved research quality. A publication-level
-evaluation still needs a labelled benchmark with, for example:
+StatArb-IR v0.1 and nine temporal rules are implemented. On seven
+author-constructed mutations, the old Agent protocol detects 0/7 and the new
+verifier detects 7/7 while accepting the valid reference. This proves that the
+checker implements those rules; it does not prove real-world usefulness.
+
+A publication-level evaluation still needs a labelled benchmark with:
 
 - paper-method extraction accuracy;
 - evidence citation precision and recall;
-- valid quant-tool selection rate;
-- unsupported-claim rate;
-- hypothesis quality scored by researchers;
-- stop/go decision agreement;
-- ablations for LLM only, LLM plus retrieval, retrieval plus tools, and the
-  full protocol.
+- temporal and execution-fault precision/recall;
+- valid-plan rejection rate;
+- repair success on unseen mutations;
+- unsupported-claim and stop/go decision accuracy;
+- repeated-run reliability, cost, and latency;
+- ablations that remove typed IR, verification, provenance, or retrieval.
 
 That benchmark is the next genuine technical threshold. It should be built
 before adding multiple Agents or more elaborate UI.

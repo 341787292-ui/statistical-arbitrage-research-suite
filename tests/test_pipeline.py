@@ -6,6 +6,9 @@ from pathlib import Path
 from quant_research_agent.pipeline import run_paper_pipeline
 from quant_research_agent.quant.tools import run_stat_arb_experiment
 from quant_research_agent.quant.tools import run_cost_sensitivity_experiment
+from quant_research_agent.quant.tools import (
+    run_temporally_aligned_stat_arb_experiment,
+)
 from quant_research_agent.rag.chunking import chunk_text
 from quant_research_agent.rag.retriever import LocalTfidfRetriever
 
@@ -63,6 +66,18 @@ class PipelineSmokeTest(unittest.TestCase):
             result["scenarios"][-1]["annual_return"],
         )
 
+    def test_temporally_aligned_tool_emits_next_open_trace(self) -> None:
+        result = run_temporally_aligned_stat_arb_experiment()
+        timing = result["timing_contract"]
+        first_event = result["execution_events"][0]
+
+        self.assertEqual(timing["signal_generation_phase"], "after_close")
+        self.assertEqual(timing["execution_phase"], "open")
+        self.assertEqual(
+            first_event["execution_session"],
+            first_event["signal_session"] + 1,
+        )
+
     def test_baseline_agent_completes_research_loop(self) -> None:
         result = run_paper_pipeline(
             paper_path=Path("samples/stat_arb_note.txt"),
@@ -86,6 +101,57 @@ class PipelineSmokeTest(unittest.TestCase):
         self.assertIn("rag-2020", foundation_ids)
         self.assertIn("Technical Method Foundations", result.report_markdown)
         self.assertIn("Research Protocol Audit", result.report_markdown)
+
+    def test_verified_agent_attaches_ir_and_mutation_benchmark(self) -> None:
+        result = run_paper_pipeline(
+            paper_path=Path("samples/stat_arb_note.txt"),
+            query="Reproduce the paper with temporal verification.",
+            use_llm=False,
+            run_verified_agent=True,
+        )
+
+        self.assertEqual(result.status, "completed")
+        self.assertTrue(result.experiment_verification["passed"])
+        self.assertEqual(
+            result.experiment_ir["metadata"]["verified_event_count"],
+            result.experiment_result["diagnostics"]["trade_count"],
+        )
+        self.assertEqual(
+            result.verification_benchmark["summary"]["old_agent_fault_recall"],
+            0.0,
+        )
+        self.assertEqual(
+            result.verification_benchmark["summary"]["verified_agent_fault_recall"],
+            1.0,
+        )
+        phases = [event["phase"] for event in result.agent_trace]
+        self.assertLess(
+            phases.index("quant_execution"),
+            phases.index("experiment_verification"),
+        )
+        self.assertLess(
+            phases.index("experiment_verification"),
+            phases.index("reflection"),
+        )
+        self.assertIn("Statistical-Arbitrage Experiment Verification", result.report_markdown)
+        self.assertIn("Old-Agent Control vs Temporal Verifier", result.report_markdown)
+
+    def test_verified_agent_blocks_an_injected_invalid_experiment(self) -> None:
+        result = run_paper_pipeline(
+            paper_path=Path("samples/stat_arb_note.txt"),
+            query="Test whether an invalid experiment is blocked.",
+            use_llm=False,
+            run_verified_agent=True,
+            verification_mutation="same_close_execution",
+        )
+
+        self.assertEqual(result.status, "verification_blocked")
+        self.assertFalse(result.experiment_verification["passed"])
+        finding = result.experiment_verification["findings"][0]
+        self.assertEqual(finding["rule_id"], "TEMP-005")
+        self.assertTrue(finding["counterexample"])
+        self.assertTrue(finding["repair"])
+        self.assertIn("Block the research conclusion", result.final_assessment["verdict"])
 
 
 if __name__ == "__main__":

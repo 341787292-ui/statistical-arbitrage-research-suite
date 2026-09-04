@@ -10,6 +10,8 @@ class PricePoint:
     date: date
     asset_a: float
     asset_b: float
+    asset_a_open: float
+    asset_b_open: float
 
 
 def generate_synthetic_pair(n_days: int = 252) -> list[PricePoint]:
@@ -30,7 +32,24 @@ def generate_synthetic_pair(n_days: int = 252) -> list[PricePoint]:
         shock = 0.9 * math.sin(business_index / 3.5) if 60 <= business_index <= 150 else 0.0
         asset_b = trend + common_cycle
         asset_a = 1.18 * asset_b + spread_cycle + shock
-        points.append(PricePoint(date=current, asset_a=asset_a, asset_b=asset_b))
+        if points:
+            overnight = 0.0004 * math.sin(business_index / 5.0)
+            asset_b_open = points[-1].asset_b * (1.0 + overnight)
+            asset_a_open = points[-1].asset_a * (
+                1.0 + overnight + 0.0001 * math.cos(business_index / 4.0)
+            )
+        else:
+            asset_a_open = asset_a
+            asset_b_open = asset_b
+        points.append(
+            PricePoint(
+                date=current,
+                asset_a=asset_a,
+                asset_b=asset_b,
+                asset_a_open=asset_a_open,
+                asset_b_open=asset_b_open,
+            )
+        )
 
         business_index += 1
         current += timedelta(days=1)

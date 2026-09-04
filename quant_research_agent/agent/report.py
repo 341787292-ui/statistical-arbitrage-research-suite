@@ -15,6 +15,9 @@ def render_report(
     agent_trace: list[dict] | None = None,
     technical_foundations: list[dict] | None = None,
     protocol_audit: dict | None = None,
+    experiment_ir: dict | None = None,
+    experiment_verification: dict | None = None,
+    verification_benchmark: dict | None = None,
 ) -> str:
     lines: list[str] = ["# Paper Research Spec", ""]
     if technical_foundations:
@@ -85,6 +88,32 @@ def render_report(
                 f"- Number of trades: {diagnostics.get('trade_count', 'Unresolved')}",
             ]
         )
+    if experiment_verification is not None:
+        lines.extend(
+            [
+                "",
+                "## Statistical-Arbitrage Experiment Verification",
+                f"- StatArb-IR schema: `{(experiment_ir or {}).get('schema_version', 'unresolved')}`",
+                f"- Temporal verification pass: **{str(experiment_verification.get('passed', False)).lower()}**",
+                f"- Rules checked: {len(experiment_verification.get('checked_rules', []))}",
+            ]
+        )
+        findings = experiment_verification.get("findings", [])
+        if findings:
+            lines.extend(
+                [
+                    "",
+                    "| Rule | Problem | Counterexample | Repair |",
+                    "| --- | --- | --- | --- |",
+                ]
+            )
+            for item in findings:
+                lines.append(
+                    f"| `{item.get('rule_id')}` | {item.get('message')} | "
+                    f"{item.get('counterexample')} | {item.get('repair')} |"
+                )
+        else:
+            lines.append("- No temporal-causality violation was found in the attached execution trace.")
     if result_analysis is not None:
         lines.extend(["", "## Research Interpretation"])
         lines.extend(["", "### Observations"])
@@ -176,6 +205,21 @@ def render_report(
                 f"| {item.get('check_id')} | {foundations} | "
                 f"{str(item.get('passed', False)).lower()} | {item.get('evidence')} |"
             )
+    if verification_benchmark:
+        summary = verification_benchmark.get("summary", {})
+        lines.extend(
+            [
+                "",
+                "## Old-Agent Control vs Temporal Verifier",
+                f"- Benchmark: {verification_benchmark.get('benchmark', 'Unresolved')}",
+                f"- Constructed faults: {summary.get('total_faults', 'Unresolved')}",
+                f"- Old protocol detected: {summary.get('old_agent_faults_detected', 'Unresolved')}",
+                f"- Temporal verifier detected: {summary.get('verified_agent_faults_detected', 'Unresolved')}",
+                "",
+                "> This is an author-constructed mutation test. It establishes implementation "
+                "correctness on known faults, not real-world effectiveness or novelty.",
+            ]
+        )
     lines.extend(["", "## Unresolved Items", *_bullets(spec.unresolved_items)])
     lines.extend(["", "## Retrieved Evidence"])
 

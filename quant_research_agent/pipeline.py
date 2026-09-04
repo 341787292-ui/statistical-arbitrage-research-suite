@@ -18,7 +18,18 @@ def run_paper_pipeline(
     use_llm: bool = True,
     run_quant: bool = False,
     run_agent: bool = False,
+    run_verified_agent: bool = False,
+    verification_mutation: str | None = None,
 ) -> PipelineResult:
+    if run_verified_agent:
+        from quant_research_agent.agent.workflow import run_verified_agent as run
+
+        return run(
+            paper_path=paper_path,
+            query=query,
+            use_llm=use_llm,
+            verification_mutation=verification_mutation,
+        )
     if run_agent:
         from quant_research_agent.agent.workflow import run_baseline_agent
 

@@ -4,7 +4,11 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from quant_research_agent.quant.backtest import BacktestConfig, run_pair_spread_backtest
+from quant_research_agent.quant.backtest import (
+    BacktestConfig,
+    run_pair_spread_backtest,
+    run_pair_spread_backtest_next_open,
+)
 from quant_research_agent.quant.synthetic_data import generate_synthetic_pair
 
 
@@ -24,6 +28,25 @@ def run_stat_arb_experiment(
         transaction_cost=transaction_cost,
     )
     return run_pair_spread_backtest(prices, config=config)
+
+
+def run_temporally_aligned_stat_arb_experiment(
+    *,
+    lookback: int = 30,
+    entry_z: float = 1.5,
+    exit_z: float = 0.1,
+    transaction_cost: float = 0.0005,
+) -> dict:
+    """Run a close-t signal with explicit next-session-open execution."""
+
+    prices = generate_synthetic_pair()
+    config = BacktestConfig(
+        lookback=lookback,
+        entry_z=entry_z,
+        exit_z=exit_z,
+        transaction_cost=transaction_cost,
+    )
+    return run_pair_spread_backtest_next_open(prices, config=config)
 
 
 def run_cost_sensitivity_experiment(
@@ -54,6 +77,46 @@ def run_cost_sensitivity_experiment(
     positive_scenarios = sum(item["sharpe"] > 0 for item in scenarios)
     return {
         "experiment": "cost_sensitivity",
+        "scenarios": scenarios,
+        "summary": {
+            "positive_sharpe_scenarios": positive_scenarios,
+            "total_scenarios": len(scenarios),
+            "survives_highest_cost": scenarios[-1]["sharpe"] > 0,
+            "sharpe_change": round(scenarios[-1]["sharpe"] - scenarios[0]["sharpe"], 6),
+        },
+    }
+
+
+def run_temporally_aligned_cost_sensitivity_experiment(
+    *,
+    transaction_costs: tuple[float, ...] = (0.0, 0.0005, 0.001, 0.002),
+    lookback: int = 30,
+    entry_z: float = 1.5,
+    exit_z: float = 0.1,
+) -> dict:
+    """Run the pre-declared cost ladder on the next-open execution path."""
+
+    scenarios: list[dict] = []
+    for cost in transaction_costs:
+        result = run_temporally_aligned_stat_arb_experiment(
+            lookback=lookback,
+            entry_z=entry_z,
+            exit_z=exit_z,
+            transaction_cost=cost,
+        )
+        scenarios.append(
+            {
+                "transaction_cost": cost,
+                "annual_return": result["metrics"]["annual_return"],
+                "sharpe": result["metrics"]["sharpe"],
+                "max_drawdown": result["metrics"]["max_drawdown"],
+            }
+        )
+
+    positive_scenarios = sum(item["sharpe"] > 0 for item in scenarios)
+    return {
+        "experiment": "cost_sensitivity",
+        "execution_policy": "close_t_to_open_t_plus_1",
         "scenarios": scenarios,
         "summary": {
             "positive_sharpe_scenarios": positive_scenarios,
@@ -110,6 +173,54 @@ def run_period_stability_experiment(
     }
 
 
+def run_temporally_aligned_period_stability_experiment(
+    *,
+    n_days: int = 504,
+    lookback: int = 30,
+    entry_z: float = 1.5,
+    exit_z: float = 0.1,
+    transaction_cost: float = 0.0005,
+) -> dict:
+    """Compare subperiods while preserving next-open execution timing."""
+
+    prices = generate_synthetic_pair(n_days=n_days)
+    midpoint = len(prices) // 2
+    periods = [("first_half", prices[:midpoint]), ("second_half", prices[midpoint:])]
+    results: list[dict] = []
+    for label, sample in periods:
+        result = run_pair_spread_backtest_next_open(
+            sample,
+            config=BacktestConfig(
+                lookback=lookback,
+                entry_z=entry_z,
+                exit_z=exit_z,
+                transaction_cost=transaction_cost,
+            ),
+        )
+        results.append(
+            {
+                "period": label,
+                "start": sample[0].date.isoformat(),
+                "end": sample[-1].date.isoformat(),
+                "annual_return": result["metrics"]["annual_return"],
+                "sharpe": result["metrics"]["sharpe"],
+                "max_drawdown": result["metrics"]["max_drawdown"],
+            }
+        )
+
+    sharpe_gap = abs(results[0]["sharpe"] - results[1]["sharpe"])
+    return {
+        "experiment": "period_stability",
+        "execution_policy": "close_t_to_open_t_plus_1",
+        "periods": results,
+        "summary": {
+            "both_periods_positive": all(item["sharpe"] > 0 for item in results),
+            "sharpe_gap": round(sharpe_gap, 6),
+            "stable_within_threshold": sharpe_gap <= 1.0,
+        },
+    }
+
+
 @dataclass(frozen=True)
 class AgentTool:
     name: str
@@ -126,6 +237,28 @@ class QuantToolRegistry:
                 name="run_stat_arb_experiment",
                 description="Run the deterministic pair-spread baseline backtest.",
                 function=run_stat_arb_experiment,
+            ),
+            AgentTool(
+                name="run_temporally_aligned_stat_arb_experiment",
+                description=(
+                    "Run the pair-spread baseline with close-t signals executed at "
+                    "open t+1 and emit a machine-checkable timing trace."
+                ),
+                function=run_temporally_aligned_stat_arb_experiment,
+            ),
+            AgentTool(
+                name="run_temporally_aligned_cost_sensitivity_experiment",
+                description=(
+                    "Test the next-open baseline under a fixed transaction-cost ladder."
+                ),
+                function=run_temporally_aligned_cost_sensitivity_experiment,
+            ),
+            AgentTool(
+                name="run_temporally_aligned_period_stability_experiment",
+                description=(
+                    "Compare next-open baseline performance across two fixed subperiods."
+                ),
+                function=run_temporally_aligned_period_stability_experiment,
             ),
             AgentTool(
                 name="run_cost_sensitivity_experiment",

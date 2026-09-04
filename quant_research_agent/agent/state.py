@@ -20,6 +20,9 @@ class ResearchAgentState:
     validation_results: list[dict] = field(default_factory=list)
     final_assessment: dict | None = None
     protocol_audit: dict | None = None
+    experiment_ir: dict | None = None
+    experiment_verification: dict | None = None
+    verification_benchmark: dict | None = None
     trace: list[dict] = field(default_factory=list)
 
     def record(self, phase: str, action: str, outcome: str) -> None:

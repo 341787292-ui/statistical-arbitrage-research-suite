@@ -209,6 +209,78 @@ FOUNDATIONS: tuple[TechnicalFoundation, ...] = (
             "quant_research_agent/agent/protocol.py",
         ),
     ),
+    TechnicalFoundation(
+        foundation_id="agentproof-2026",
+        short_name="Agentproof",
+        title="Agentproof: Static Verification of Agent Workflow Graphs",
+        authors="Xavier et al.",
+        venue="arXiv",
+        year=2026,
+        url="https://arxiv.org/abs/2603.20356",
+        design_rule=(
+            "Safety properties should be checked mechanically and violations should "
+            "include a witness trace, rather than relying on an Agent to critique itself."
+        ),
+        implementation=(
+            "The temporal verifier applies deterministic rules to StatArb-IR and emits "
+            "a concrete counterexample plus a repair for every violation."
+        ),
+        non_claim=(
+            "This project adapts static-verification and witness-reporting principles. "
+            "It does not reproduce Agentproof's graph extraction or automata algorithms."
+        ),
+        code_surfaces=(
+            "quant_research_agent/verification/temporal.py",
+            "quant_research_agent/verification/benchmark.py",
+        ),
+    ),
+    TechnicalFoundation(
+        foundation_id="sigil-2026",
+        short_name="SIGIL",
+        title="SIGIL: Compiling Agent Skills into Typed Harnesses",
+        authors="Dantanarayana et al.",
+        venue="arXiv",
+        year=2026,
+        url="https://arxiv.org/abs/2607.27309",
+        design_rule=(
+            "Procedural requirements that must not be skipped should be represented in "
+            "a closed typed form before execution."
+        ),
+        implementation=(
+            "StatArb-IR v0.1 represents data availability, model fitting, signal creation, "
+            "execution, return attribution, and holdout selection as typed objects."
+        ),
+        non_claim=(
+            "The project does not implement SIGIL's skill compiler or AG-IR. It applies "
+            "the typed-intermediate-representation principle to a narrower finance domain."
+        ),
+        code_surfaces=("quant_research_agent/verification/ir.py",),
+    ),
+    TechnicalFoundation(
+        foundation_id="prov-o-2013",
+        short_name="PROV-O",
+        title="PROV-O: The PROV Ontology",
+        authors="Lebo, Sahoo, and McGuinness",
+        venue="W3C Recommendation",
+        year=2013,
+        url="https://www.w3.org/TR/prov-o/",
+        design_rule=(
+            "Research artifacts should retain explicit derivation and activity links so "
+            "a decision can be traced back to the data and process that produced it."
+        ),
+        implementation=(
+            "StatArb-IR links derived data, model fits, signals, executions, and selection "
+            "boundaries by stable identifiers."
+        ),
+        non_claim=(
+            "StatArb-IR is not a complete PROV-O ontology or RDF serialization; it uses "
+            "the standard as a provenance design reference."
+        ),
+        code_surfaces=(
+            "quant_research_agent/verification/ir.py",
+            "quant_research_agent/verification/adapters.py",
+        ),
+    ),
 )
 
 
@@ -223,6 +295,12 @@ PHASE_FOUNDATIONS: dict[str, tuple[str, ...]] = {
     "evidence_review": ("self-rag-2024", "finqa-2021"),
     "hypothesis_generation": ("react-2023",),
     "quant_execution": ("react-2023", "finqa-2021"),
+    "experiment_verification": (
+        "agentproof-2026",
+        "sigil-2026",
+        "prov-o-2013",
+        "external-feedback-2024",
+    ),
     "diagnosis": ("react-2023", "self-rag-2024"),
     "validation": (
         "react-2023",

@@ -7,7 +7,7 @@ statistical-arbitrage research.
 |---|---|---|
 | `paper_reproduction/` | Internship project: reproduce *Deep Learning Statistical Arbitrage* | OU and all three five-factor Fourier+FFN public-data approximations complete |
 | `ashare_stat_arb/` | Applied research: test whether the paper's residual methodology can become A-share index-enhancement alpha | OU and all three residual-rank mappings rejected; the tested branch is closed |
-| `quant_research_agent/` | Research project: build a statistical-arbitrage research Agent | Paper-backed research protocol, tool validation, stop/go decisions, and machine-checkable audits are runnable |
+| `quant_research_agent/` | Research project: build a verifiable statistical-arbitrage research Agent | Original Agent retained as a control; StatArb-IR v0.1, temporal verification, and a seven-fault mutation benchmark are runnable |
 
 The products share research concepts, but they do not share empirical claims.
 The U.S. paper result, A-share adaptation, and Agent evaluation must always be
@@ -115,6 +115,16 @@ eight-gate audit fails the run when retrieval evidence, executable numerical
 results, external validation feedback, hypothesis provenance, or holdout
 controls are missing. See `quant_research_agent/TECHNICAL_FOUNDATIONS.md`.
 
+The original `--run-agent` path is now frozen as an experimental control. A
+separate `--run-verified-agent` path emits typed temporal provenance and checks
+whether data, model fitting, signal generation, execution, return attribution,
+and holdout selection occur in a causally valid order. Its instrumented
+baseline generates the signal after close and executes at the next session's
+open. The initial author-constructed mutation benchmark finds all seven known
+faults while the old artifact-level protocol finds none. This is an
+implementation test, not yet evidence of real-world superiority. See
+`quant_research_agent/VERIFICATION_RESEARCH.md`.
+
 The A-share product is connected through a deliberately narrow adapter. The
 Agent can inspect the frozen 2018-2022 diagnostic and run one fixed residual-
 space OU mechanism test, a PCA residual-continuity audit, and one pre-registered
@@ -127,6 +137,7 @@ Run it locally:
 ```bash
 pip install -r requirements.txt
 python main.py --paper samples/stat_arb_note.txt --no-llm --run-agent
+python main.py --paper samples/stat_arb_note.txt --no-llm --run-verified-agent
 python -m unittest discover -s tests -v
 ```
 
