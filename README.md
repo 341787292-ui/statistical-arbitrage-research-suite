@@ -6,8 +6,8 @@ statistical-arbitrage research.
 | Product | Purpose | Current status |
 |---|---|---|
 | `paper_reproduction/` | Internship project: reproduce *Deep Learning Statistical Arbitrage* | OU and all three five-factor Fourier+FFN public-data approximations complete |
-| `ashare_stat_arb/` | Applied research: test whether the paper's residual methodology can become A-share index-enhancement alpha | OU branch rejected on the free pilot; short-horizon cross-sectional residual ranking remains open |
-| `quant_research_agent/` | Research project: build a statistical-arbitrage research Agent | Bounded evidence review, hypothesis testing, stop/go decisions, and audit reports are runnable |
+| `ashare_stat_arb/` | Applied research: test whether the paper's residual methodology can become A-share index-enhancement alpha | OU and all three residual-rank mappings rejected; the tested branch is closed |
+| `quant_research_agent/` | Research project: build a statistical-arbitrage research Agent | Paper-backed research protocol, tool validation, stop/go decisions, and machine-checkable audits are runnable |
 
 The products share research concepts, but they do not share empirical claims.
 The U.S. paper result, A-share adaptation, and Agent evaluation must always be
@@ -51,9 +51,10 @@ changes under A-share execution constraints.
 
 The empirical objective is not to preserve the paper's OU rule at all costs.
 It is to determine which part of the residual methodology survives in a
-cash-executable A-share index-enhancement workflow. The current evidence
-rejects the fixed OU time-series branch but leaves a narrower 1/5-day cross-
-sectional residual-ranking hypothesis open.
+cash-executable A-share index-enhancement workflow. The fixed OU branch and
+three pre-registered mappings of the narrower five-day residual-ranking signal
+all fail to produce positive net excess return. The tested branch is closed;
+the 2023-2025 holdout remains sealed.
 
 The current runnable product supports:
 
@@ -93,8 +94,9 @@ the separation between theoretical long-short and executable A-share tracks.
 
 ## 3. Quant research Agent
 
-`quant_research_agent/` is an early research-engineering prototype. It turns a
-paper or note into an auditable workflow:
+`quant_research_agent/` is a research-engineering prototype with a
+paper-backed protocol. It turns a paper or frozen empirical case into an
+auditable workflow:
 
 ```text
 Paper / note
@@ -106,7 +108,12 @@ Paper / note
 ```
 
 The Agent's synthetic pair-spread backtest is an engineering baseline, not a
-reproduction of the paper.
+reproduction of the paper. Its protocol explicitly adapts RAG, ReAct,
+Self-RAG, FinQA, Reflexion, external-feedback correction, and backtest
+selection-bias research. Every trace step names its method foundations, and an
+eight-gate audit fails the run when retrieval evidence, executable numerical
+results, external validation feedback, hypothesis provenance, or holdout
+controls are missing. See `quant_research_agent/TECHNICAL_FOUNDATIONS.md`.
 
 The A-share product is connected through a deliberately narrow adapter. The
 Agent can inspect the frozen 2018-2022 diagnostic and run one fixed residual-
@@ -141,9 +148,11 @@ composition worsens annualized residual return to -2.31% and Sharpe to -0.259.
 The Agent therefore rejects residual stitching as the explanation and closes
 OU tuning on this pilot. A model-free audit subsequently finds development /
 validation RankIC of 0.0174 / 0.0283 at one day and 0.0338 / 0.0210 at five
-days. Raw pooled correlations remain negative, so the Agent permits only a
-simple cross-sectional mapping experiment and does not authorize a Fourier or
-neural time-series model.
+days. Raw pooled correlations remain negative, so the diagnostic Agent allowed
+only one pre-registered cross-sectional mapping branch. That branch has now
+completed: daily continuous, five-session, and daily buffered mappings all
+produce negative net excess return. The tested route is closed, and neither
+parameter search nor holdout access is authorized.
 
 An optional OpenAI-backed extraction path is available through `.env`; API
 keys must never be committed.

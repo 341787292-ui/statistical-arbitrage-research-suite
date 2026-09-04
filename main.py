@@ -66,7 +66,7 @@ def main() -> None:
     report_path.write_text(result.report_markdown, encoding="utf-8")
     spec_path.write_text(result.to_json(indent=2), encoding="utf-8")
 
-    print("AI Quant Research Agent v0.3 completed.")
+    print("AI Quant Research Agent - Research Protocol v1 completed.")
     print(f"Status: {result.status}")
     print(f"Agent steps: {len(result.agent_trace)}")
     print(f"Validation experiments: {len(result.validation_results)}")

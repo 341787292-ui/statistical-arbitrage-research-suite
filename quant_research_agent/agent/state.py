@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from quant_research_agent.agent.spec import ExperimentPlan, PaperResearchSpec
+from quant_research_agent.methodology import foundation_ids_for_phase
 
 
 @dataclass
@@ -18,6 +19,7 @@ class ResearchAgentState:
     result_analysis: dict | None = None
     validation_results: list[dict] = field(default_factory=list)
     final_assessment: dict | None = None
+    protocol_audit: dict | None = None
     trace: list[dict] = field(default_factory=list)
 
     def record(self, phase: str, action: str, outcome: str) -> None:
@@ -28,5 +30,6 @@ class ResearchAgentState:
                 "phase": phase,
                 "action": action,
                 "outcome": outcome,
+                "method_ids": list(foundation_ids_for_phase(phase)),
             }
         )

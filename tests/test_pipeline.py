@@ -78,6 +78,14 @@ class PipelineSmokeTest(unittest.TestCase):
         self.assertIn("reporting", phases)
         self.assertIn("Final Agent Assessment", result.report_markdown)
         self.assertIn("Agent Execution Trace", result.report_markdown)
+        self.assertTrue(result.protocol_audit["passed"])
+        self.assertGreaterEqual(len(result.technical_foundations), 5)
+        foundation_ids = {
+            item["foundation_id"] for item in result.technical_foundations
+        }
+        self.assertIn("rag-2020", foundation_ids)
+        self.assertIn("Technical Method Foundations", result.report_markdown)
+        self.assertIn("Research Protocol Audit", result.report_markdown)
 
 
 if __name__ == "__main__":

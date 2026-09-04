@@ -13,15 +13,39 @@ def render_report(
     validation_results: list[dict] | None = None,
     final_assessment: dict | None = None,
     agent_trace: list[dict] | None = None,
+    technical_foundations: list[dict] | None = None,
+    protocol_audit: dict | None = None,
 ) -> str:
-    lines: list[str] = [
-        "# Paper Research Spec",
-        "",
-        "## Research Problem",
-        spec.research_problem,
-        "",
-        "## Financial Hypotheses",
-    ]
+    lines: list[str] = ["# Paper Research Spec", ""]
+    if technical_foundations:
+        lines.extend(
+            [
+                "## Technical Method Foundations",
+                "| Method | Paper | Implemented control |",
+                "| --- | --- | --- |",
+            ]
+        )
+        for item in technical_foundations:
+            lines.append(
+                f"| `{item['foundation_id']}` | [{item['short_name']}]({item['url']}) "
+                f"({item['venue']} {item['year']}) | {item['implementation']} |"
+            )
+        lines.extend(
+            [
+                "",
+                "> These are explicit engineering adaptations. The report does not claim "
+                "to reproduce or train the original research models.",
+                "",
+            ]
+        )
+    lines.extend(
+        [
+            "## Research Problem",
+            spec.research_problem,
+            "",
+            "## Financial Hypotheses",
+        ]
+    )
     lines.extend(_bullets(spec.financial_hypotheses))
     lines.extend(
         [
@@ -125,12 +149,32 @@ def render_report(
         )
     if agent_trace:
         lines.extend(["", "## Agent Execution Trace"])
-        lines.append("| Step | Phase | Action | Outcome |")
-        lines.append("| ---: | --- | --- | --- |")
+        lines.append("| Step | Phase | Method IDs | Action | Outcome |")
+        lines.append("| ---: | --- | --- | --- | --- |")
         for event in agent_trace:
+            method_ids = ", ".join(f"`{item}`" for item in event.get("method_ids", []))
             lines.append(
                 f"| {event.get('step')} | {event.get('phase')} | "
-                f"{event.get('action')} | {event.get('outcome')} |"
+                f"{method_ids} | {event.get('action')} | {event.get('outcome')} |"
+            )
+    if protocol_audit:
+        lines.extend(
+            [
+                "",
+                "## Research Protocol Audit",
+                f"- Overall protocol pass: **{str(protocol_audit.get('passed', False)).lower()}**",
+                "",
+                "| Check | Foundation | Pass | Audit evidence |",
+                "| --- | --- | ---: | --- |",
+            ]
+        )
+        for item in protocol_audit.get("checks", []):
+            foundations = ", ".join(
+                f"`{foundation_id}`" for foundation_id in item.get("foundation_ids", [])
+            )
+            lines.append(
+                f"| {item.get('check_id')} | {foundations} | "
+                f"{str(item.get('passed', False)).lower()} | {item.get('evidence')} |"
             )
     lines.extend(["", "## Unresolved Items", *_bullets(spec.unresolved_items)])
     lines.extend(["", "## Retrieved Evidence"])

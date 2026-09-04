@@ -49,14 +49,20 @@ def analyze_experiment_result(experiment_result: dict) -> dict:
             "supporting_evidence": [
                 "Turnover is non-zero and the strategy enters/exits positions repeatedly."
             ],
-            "validation_needed": "Run a grid over transaction costs, entry thresholds, and exit thresholds.",
+            "validation_needed": (
+                "Run one pre-registered transaction-cost ladder while keeping entry and "
+                "exit thresholds fixed."
+            ),
         },
     ]
 
     recommended_experiments = [
         {
             "experiment": "Cost sensitivity test",
-            "rationale": "Increase transaction cost assumptions and observe whether Sharpe remains positive.",
+            "rationale": (
+                "Increase pre-declared transaction cost assumptions without retuning the "
+                "strategy and observe whether Sharpe remains positive."
+            ),
         },
         {
             "experiment": "Rolling-period analysis",
@@ -125,8 +131,10 @@ def reflect_on_validations(
         "confidence": confidence,
         "evidence": evidence,
         "limitations": limitations,
+        "parameter_search_authorized": False,
+        "holdout_accessed": False,
         "next_action": (
-            "Replace the synthetic pair with public equity data, use a train/test split, "
-            "and rerun the same validation protocol."
+            "Pre-register a public-data train/validation/holdout contract, replace the "
+            "synthetic pair, and rerun the same fixed validation protocol."
         ),
     }

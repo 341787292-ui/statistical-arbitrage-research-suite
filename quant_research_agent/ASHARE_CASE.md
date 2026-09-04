@@ -15,7 +15,7 @@ ashare_stat_arb panel + direction diagnostic
   -> residual coverage and PCA-refit continuity audit
   -> one pre-registered residual-definition comparison
   -> model-free residual predictability audit
-  -> reflected Agent report
+  -> reflected Agent report and paper-backed protocol audit
 ```
 
 The Agent does not download data, construct the executable portfolio, choose
@@ -53,12 +53,19 @@ On the free 2018-2022 BaoStock pilot, the Agent found:
 - learned time-series model authorized: no;
 - sealed holdout accessed: no.
 
-This is a useful negative result. The Agent completed an evidence-to-hypothesis-
-to-experiment-to-reflection loop and stopped the project from tuning an
-unvalidated mechanism. It now distinguishes the rejected OU time-series
-mechanism from a narrower short-horizon cross-sectional ranking effect. Its
-next allowed step is a simple executable residual-rank mapping, not parameter
-search, a learned time-series model, or a holdout run.
+This was a useful intermediate negative result. The diagnostic Agent completed
+an evidence-to-hypothesis-to-experiment-to-reflection loop and stopped the
+project from tuning an unvalidated OU mechanism. It distinguished the rejected
+OU time-series mechanism from a narrower short-horizon cross-sectional ranking
+effect and allowed one pre-registered mapping branch.
+
+That mapping branch is now complete. Daily continuous, five-session, and daily
+buffered mappings all produce negative net excess return after the declared
+A-share costs. The route is closed. Parameter search, learned time-series
+models, and the sealed holdout remain unauthorized.
+
+Every new Agent run also reports its active technical foundations and executes
+the research protocol audit described in `TECHNICAL_FOUNDATIONS.md`.
 
 ## Run
 

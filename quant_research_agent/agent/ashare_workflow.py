@@ -5,10 +5,16 @@ import json
 from pathlib import Path
 from typing import Any
 
+from quant_research_agent.agent.protocol import audit_research_run
 from quant_research_agent.integrations.ashare import (
     AshareExperimentContract,
     AshareResearchTools,
     create_ashare_experiment_contract,
+)
+from quant_research_agent.methodology import (
+    active_foundation_ids,
+    foundation_ids_for_phase,
+    methodology_manifest,
 )
 
 
@@ -23,6 +29,8 @@ class AshareAgentResult:
     predictability_result: dict[str, Any]
     final_assessment: dict[str, Any]
     trace: list[dict[str, Any]] = field(default_factory=list)
+    technical_foundations: list[dict[str, Any]] = field(default_factory=list)
+    protocol_audit: dict[str, Any] | None = None
     report_markdown: str = ""
     status: str = "completed"
 
@@ -50,6 +58,7 @@ def run_ashare_diagnostic_agent(
                 "phase": phase,
                 "action": action,
                 "outcome": outcome,
+                "method_ids": list(foundation_ids_for_phase(phase)),
             }
         )
 
@@ -292,6 +301,21 @@ def run_ashare_diagnostic_agent(
             "learned_time_series_model_authorized"
         ],
         "holdout_accessed": False,
+        "evidence": [
+            (
+                "The fixed paper-direction residual-space Sharpe is "
+                f"{experiment['original']['annualized_sharpe']:.3f}."
+            ),
+            (
+                "The current-composition residual definition has Sharpe "
+                f"{comparison['current_composition']['annualized_sharpe']:.3f} "
+                "and does not pass the frozen mechanism gate."
+            ),
+            (
+                "The model-free audit supports only narrow 1- and 5-day "
+                "cross-sectional ranking, not broad residual mean reversion."
+            ),
+        ],
         "limitations": [
             "The free pilot uses 100 point-in-time sampled constituents and an equal-weight benchmark.",
             "The residual experiment is theoretical and ignores cash-equity execution constraints.",
@@ -301,6 +325,16 @@ def run_ashare_diagnostic_agent(
     }
     record("reflection", "Update hypotheses from executable evidence", verdict)
     record("reporting", "Render an auditable A-share Agent report", "Workflow completed.")
+    validation_results = [audit_result, comparison_result, predictability_result]
+    protocol_audit = audit_research_run(
+        trace=trace,
+        hypotheses=hypotheses,
+        final_assessment=final,
+        experiment_result=experiment,
+        validation_results=validation_results,
+        require_retrieval=False,
+    ).to_dict()
+    foundations = methodology_manifest(active_foundation_ids(trace))
     report = _render_report(
         contract,
         evidence,
@@ -311,6 +345,8 @@ def run_ashare_diagnostic_agent(
         predictability_result,
         final,
         trace,
+        foundations,
+        protocol_audit,
     )
     return AshareAgentResult(
         contract=contract,
@@ -322,7 +358,10 @@ def run_ashare_diagnostic_agent(
         predictability_result=predictability_result,
         final_assessment=final,
         trace=trace,
+        technical_foundations=foundations,
+        protocol_audit=protocol_audit,
         report_markdown=report,
+        status="completed" if protocol_audit["passed"] else "protocol_failed",
     )
 
 
@@ -336,10 +375,27 @@ def _render_report(
     predictability_result: dict[str, Any],
     final: dict[str, Any],
     trace: list[dict[str, Any]],
+    foundations: list[dict[str, Any]],
+    protocol_audit: dict[str, Any],
 ) -> str:
     facts = evidence["facts"]
     lines = [
         "# A-Share Quant Research Agent Report",
+        "",
+        "## Technical Method Foundations",
+        "| Method | Paper | Implemented control |",
+        "| --- | --- | --- |",
+    ]
+    for item in foundations:
+        lines.append(
+            f"| `{item['foundation_id']}` | [{item['short_name']}]({item['url']}) "
+            f"({item['venue']} {item['year']}) | {item['implementation']} |"
+        )
+    lines.extend(
+        [
+        "",
+        "> These are engineering adaptations with explicit limits, not claims that the "
+        "original research models were trained or reproduced.",
         "",
         "## Research Contract",
         f"- Data fingerprint: `{contract.data_fingerprint}`",
@@ -355,7 +411,8 @@ def _render_report(
         f"- Nonzero stock-alpha rate: {facts['signal_nonzero_rate']:.2%}",
         "",
         "## Hypotheses",
-    ]
+        ]
+    )
     for item in hypotheses:
         status = item.get("status_after_new_experiment", item["status_before_new_experiment"])
         lines.append(f"- {item['id']}: {item['claim']} Status: {status}.")
@@ -440,13 +497,33 @@ def _render_report(
             *[f"- {item}" for item in final["limitations"]],
             "",
             "## Execution Trace",
-            "| Step | Phase | Action | Outcome |",
-            "| ---: | --- | --- | --- |",
+            "| Step | Phase | Method IDs | Action | Outcome |",
+            "| ---: | --- | --- | --- | --- |",
         ]
     )
     for item in trace:
+        method_ids = ", ".join(f"`{value}`" for value in item.get("method_ids", []))
         lines.append(
-            f"| {item['step']} | {item['phase']} | {item['action']} | {item['outcome']} |"
+            f"| {item['step']} | {item['phase']} | {method_ids} | "
+            f"{item['action']} | {item['outcome']} |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Research Protocol Audit",
+            f"- Overall protocol pass: **{str(protocol_audit['passed']).lower()}**",
+            "",
+            "| Check | Foundation | Pass | Audit evidence |",
+            "| --- | --- | ---: | --- |",
+        ]
+    )
+    for item in protocol_audit["checks"]:
+        method_ids = ", ".join(
+            f"`{value}`" for value in item.get("foundation_ids", [])
+        )
+        lines.append(
+            f"| {item['check_id']} | {method_ids} | "
+            f"{str(item['passed']).lower()} | {item['evidence']} |"
         )
     lines.append("")
     return "\n".join(lines)

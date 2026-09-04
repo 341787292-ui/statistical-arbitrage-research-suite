@@ -4,6 +4,7 @@ from pathlib import Path
 
 from quant_research_agent.agent.paper_analyzer import analyze_paper
 from quant_research_agent.agent.planner import create_baseline_plan
+from quant_research_agent.agent.protocol import audit_research_run
 from quant_research_agent.agent.report import render_report
 from quant_research_agent.agent.result_analyzer import (
     analyze_experiment_result,
@@ -12,6 +13,7 @@ from quant_research_agent.agent.result_analyzer import (
 from quant_research_agent.agent.spec import PipelineResult
 from quant_research_agent.agent.state import ResearchAgentState
 from quant_research_agent.quant.tools import QuantToolRegistry
+from quant_research_agent.methodology import active_foundation_ids, methodology_manifest
 from quant_research_agent.rag.chunking import chunk_text
 from quant_research_agent.rag.document_loader import load_document
 from quant_research_agent.rag.retriever import LocalTfidfRetriever
@@ -100,6 +102,17 @@ def run_baseline_agent(
         "Generate the auditable research report",
         "Baseline agent completed the paper-to-evidence loop.",
     )
+    state.protocol_audit = audit_research_run(
+        trace=state.trace,
+        hypotheses=state.result_analysis.get("hypotheses", []),
+        final_assessment=state.final_assessment,
+        experiment_result=state.experiment_result,
+        validation_results=state.validation_results,
+        retrieved_evidence=state.spec.evidence,
+        retrieved_evidence_count=len(state.spec.evidence),
+        require_retrieval=True,
+    ).to_dict()
+    foundations = methodology_manifest(active_foundation_ids(state.trace))
     report = render_report(
         state.spec,
         state.plan,
@@ -108,6 +121,8 @@ def run_baseline_agent(
         validation_results=state.validation_results,
         final_assessment=state.final_assessment,
         agent_trace=state.trace,
+        technical_foundations=foundations,
+        protocol_audit=state.protocol_audit,
     )
 
     return PipelineResult(
@@ -119,7 +134,9 @@ def run_baseline_agent(
         validation_results=state.validation_results,
         final_assessment=state.final_assessment,
         agent_trace=state.trace,
-        status="completed",
+        technical_foundations=foundations,
+        protocol_audit=state.protocol_audit,
+        status="completed" if state.protocol_audit["passed"] else "protocol_failed",
     )
 
 

@@ -277,7 +277,15 @@ class AshareAgentTests(unittest.TestCase):
                 result.final_assessment["learned_time_series_model_authorized"]
             )
             self.assertFalse(result.final_assessment["holdout_accessed"])
+            self.assertTrue(result.protocol_audit["passed"])
+            self.assertGreaterEqual(len(result.technical_foundations), 5)
+            foundation_ids = {
+                item["foundation_id"] for item in result.technical_foundations
+            }
+            self.assertNotIn("rag-2020", foundation_ids)
             self.assertIn("A-Share Quant Research Agent Report", result.report_markdown)
+            self.assertIn("Technical Method Foundations", result.report_markdown)
+            self.assertIn("Research Protocol Audit", result.report_markdown)
 
 
 if __name__ == "__main__":

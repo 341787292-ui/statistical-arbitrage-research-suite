@@ -55,6 +55,8 @@ class PipelineResult:
     validation_results: list[dict] = field(default_factory=list)
     final_assessment: dict | None = None
     agent_trace: list[dict] = field(default_factory=list)
+    technical_foundations: list[dict] = field(default_factory=list)
+    protocol_audit: dict | None = None
     status: str = "completed"
 
     def to_json(self, *, indent: int | None = None) -> str:
